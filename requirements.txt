@@ -1,0 +1,9 @@
+numpy
+pandas
+loguru
+requests
+langdetect
+beautifulsoup4
+lxml
+transformers
+torch
