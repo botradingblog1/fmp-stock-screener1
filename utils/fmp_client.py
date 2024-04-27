@@ -81,6 +81,27 @@ class FmpClient:
             return {"status": 400, "data": None, "message": "Failed in FMP press releases"}
 
     def get_social_sentiment(self, symbol):
+        # Docs: https://site.financialmodelingprep.com/developer/docs#historical-social-sentiment
+        try:
+            url = f"https://financialmodelingprep.com/api/v4/historical/social-sentiment?symbol={symbol}&apikey={self._api_key}"
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                social_sentiment_data = response.json()
+                if social_sentiment_data:
+                    social_sentiment_df = pd.DataFrame(social_sentiment_data)
+                    social_sentiment_df['date'] = pd.to_datetime(social_sentiment_df['date'], errors='coerce')
+                    # Filter out invalid dates (NaT values after conversion)
+                    social_sentiment_df = social_sentiment_df.dropna(subset=['date'])
+
+                    return social_sentiment_df
+                return None
+            else:
+                return None
+        except Exception as ex:
+            loge(ex)
+            return None
+
         try:
             url = f"https://financialmodelingprep.com/api/v4/historical/social-sentiment?symbol={symbol}&apikey={self._api_key}"
             response = requests.get(url)
@@ -222,6 +243,48 @@ class FmpClient:
                 return None
         except Exception as ex:
             loge(ex)
+            return None
+
+    def fetch_daily_prices(self, symbol):
+        try:
+            url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?apikey={self._api_key}&serietype=line"
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                historical_data = data.get('historical', [])
+                if historical_data:
+                    prices_df = pd.DataFrame(historical_data)
+                    prices_df['date'] = pd.to_datetime(prices_df['date'])
+                    prices_df.set_index('date', inplace=True)
+                    return prices_df
+                else:
+                    return None
+            else:
+                return None
+        except Exception as ex:
+            print(ex)
+            return None
+
+    def fetch_dividends(self, symbol):
+        try:
+            url = f"https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{symbol}?apikey={self._api_key}"
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                data = response.json()
+                historical_data = data.get('historical', [])
+                if historical_data:
+                    dividends_df = pd.DataFrame(historical_data)
+                    dividends_df['paymentDate'] = pd.to_datetime(dividends_df['paymentDate'])
+                    dividends_df['declarationDate'] = pd.to_datetime(dividends_df['declarationDate'])
+                    dividends_df.set_index('paymentDate', inplace=True)
+                    return dividends_df
+                else:
+                    return None
+            else:
+                return None
+        except Exception as ex:
+            print(ex)
             return None
 
     def get_all_stocks_live_price(self):

@@ -118,7 +118,7 @@ class FmpStockNewsLoader:
             logd(f"Loading stock news for {symbol}...")
 
             # Fetch news
-            limit = 1
+            limit = 5
             news_df = self.fmp_client.get_stock_news(symbol, limit)
             if news_df is None or len(news_df) == 0:
                 print(f"No news for {symbol}")
@@ -141,4 +141,10 @@ class FmpStockNewsLoader:
         path = os.path.join(CACHE_DIR, file_name)
         all_news_df.to_csv(path)
 
-        return all_news_df
+        # Group by 'symbol' and calculate mean and std of 'sentiment_score'
+        news_sentiment_stats_df = all_news_df.groupby('symbol')['sentiment_score'].agg(['mean', 'std']).reset_index()
+        file_name = "news_sentiment_stats_df.csv"
+        path = os.path.join(CACHE_DIR, file_name)
+        news_sentiment_stats_df.to_csv(path)
+
+        return news_sentiment_stats_df
