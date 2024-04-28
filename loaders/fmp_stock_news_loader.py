@@ -130,19 +130,20 @@ class FmpStockNewsLoader:
 
             if len(news_df) == 0:
                 logw(f"No news stories in the last month for {symbol}")
-                continue
+                news_sentiment_score = 0
+            else:
 
-            # Filter non-english news articles
-            news_df = self.filter_non_english_news_items(news_df)
+                # Filter non-english news articles
+                news_df = self.filter_non_english_news_items(news_df)
 
-            # Fetch full news articles
-            #news_df = self.fetch_all_full_text(news_df)
+                # Fetch full news articles
+                #news_df = self.fetch_all_full_text(news_df)
 
-            # Detect news sentiment
-            news_df['news_sentiment'] = news_df.apply(self.detect_news_sentiment, axis=1)
+                # Detect news sentiment
+                news_df['news_sentiment'] = news_df.apply(self.detect_news_sentiment, axis=1)
 
-            # Calculate score
-            news_sentiment_score = self.calculate_news_sentiment_score(news_df)
+                # Calculate score
+                news_sentiment_score = self.calculate_news_sentiment_score(news_df)
 
             row = pd.DataFrame({'symbol': [symbol], 'news_sentiment_score': [news_sentiment_score]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)

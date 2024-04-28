@@ -16,6 +16,7 @@ fundamentals_refresh_interval = DataRefreshInterval.WEEKLY
 FMP_CALLS_PER_MINUTE = 300
 API_REQUEST_DELAY = 60 / FMP_CALLS_PER_MINUTE
 RISK_FREE_RATE = 0.015  # Annualized average risk-free rate (3-month T-bill average)
+ROUND_PRECISION = 4  # Precision for rounding values, number of placed after decimal point
 
 # Minimum criteria
 MIN_PRICE = 5.0  # Minimum price a security should have

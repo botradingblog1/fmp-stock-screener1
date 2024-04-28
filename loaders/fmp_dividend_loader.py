@@ -4,6 +4,7 @@ from utils.fmp_client import FmpClient
 from utils.log_utils import *
 import time
 from datetime import datetime, timedelta
+import numpy as np
 
 
 class FmpDividendLoader:
@@ -77,28 +78,30 @@ class FmpDividendLoader:
             # Get prices
             if symbol not in prices_dict:
                 logw(f"No prices for dividend calculation for {symbol}")
-                continue
-            prices_df = prices_dict[symbol]
+                avg_dividend_yield = 0
+            else:
+                prices_df = prices_dict[symbol]
 
-            # Fetch dividends
-            dividends_df = self.fmp_client.fetch_dividends(symbol)
-            if dividends_df is None:
-                logw(f"Not enough dividend data for {symbol}")
-                continue
-            # Filter by date
-            start_date = datetime.today() - timedelta(days=LOOKBACK_DAYS)
-            dividends_df = dividends_df[dividends_df.index >= start_date]
+                # Fetch dividends
+                dividends_df = self.fmp_client.fetch_dividends(symbol)
+                if dividends_df is None:
+                    logw(f"Not enough dividend data for {symbol}")
+                    avg_dividend_yield = 0
+                else:
+                    # Filter by date
+                    start_date = datetime.today() - timedelta(days=LOOKBACK_DAYS)
+                    dividends_df = dividends_df[dividends_df.index >= start_date]
 
-            # Filter prices by start date
-            prices_df = prices_df[prices_df.index >= start_date]
+                    # Filter prices by start date
+                    prices_df = prices_df[prices_df.index >= start_date]
 
-            # Calculate dividend yield
-            annual_dividends_df = self.calculate_dividend_yield(dividends_df, prices_df)
-            # Cap dividend values
-            avg_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].mean(), MIN_DIVIDEND_YIELD,
-                                            MAX_DIVIDEND_YIELD)
-            std_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].std(), MIN_DIVIDEND_YIELD,
-                                            MAX_DIVIDEND_YIELD)
+                    # Calculate dividend yield
+                    annual_dividends_df = self.calculate_dividend_yield(dividends_df, prices_df)
+                    # Cap dividend values
+                    avg_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].mean(), MIN_DIVIDEND_YIELD,
+                                                    MAX_DIVIDEND_YIELD)
+                    std_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].std(), MIN_DIVIDEND_YIELD,
+                                                    MAX_DIVIDEND_YIELD)
 
             dividend_results.append({'symbol': symbol, 'avg_dividend_yield': avg_dividend_yield})
         dividend_stats_df = pd.DataFrame(dividend_results)

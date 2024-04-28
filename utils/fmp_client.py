@@ -148,6 +148,23 @@ class FmpClient:
             print(ex)
             return None
 
+    def fetch_all_prices(self):
+        try:
+            url = f"https://financialmodelingprep.com/api/v3/stock/full/real-time-price?apikey={self._api_key}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if data:
+                    all_prices_df = pd.DataFrame(data)
+                    return all_prices_df
+                else:
+                    return None
+            else:
+                return None
+        except Exception as ex:
+            print(ex)
+            return None
+
     def fetch_dividends(self, symbol):
         try:
             url = f"https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{symbol}?apikey={self._api_key}"

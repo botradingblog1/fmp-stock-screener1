@@ -6,7 +6,7 @@ from config import *
 
 
 #  Set log level
-LOG_LEVEL = LogLevel.INFO
+LOG_LEVEL = LogLevel.DEBUG
 
 
 def setup_logger(log_file_name):

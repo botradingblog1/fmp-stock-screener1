@@ -5,6 +5,7 @@ from utils.log_utils import *
 from utils.df_utils import cap_outliers
 from datetime import datetime, timedelta
 import time
+import numpy as np
 
 
 class FmpSocialSentimentLoader:
@@ -14,8 +15,7 @@ class FmpSocialSentimentLoader:
     def calculate_social_sentiment_score(self, sentiment_df):
         mean_sentiment = sentiment_df['stocktwitsSentiment'].mean()
 
-        sentiment_score = mean_sentiment
-        return sentiment_score
+        return mean_sentiment
 
     def fetch(self, symbol_list):
         #  Iterate through symbols
@@ -27,14 +27,16 @@ class FmpSocialSentimentLoader:
             social_sentiment_df = self.fmp_client.get_social_sentiment(symbol)
             if social_sentiment_df is None or len(social_sentiment_df) == 0:
                 print(f"No social sentiment for {symbol}")
-                continue
+                sentiment_score = 0
+            else:
+                # Filter - only keep records from last quarter days
+                start_date = datetime.today() - timedelta(days=90)
+                social_sentiment_df = social_sentiment_df[social_sentiment_df['date'] >= start_date]
 
-            # Filter - only keep records from last 30 days
-            start_date = datetime.today() - timedelta(days=30)
-            social_sentiment_df = social_sentiment_df[social_sentiment_df['date'] >= start_date]
-
-            # Calculate score
-            sentiment_score = self.calculate_social_sentiment_score(social_sentiment_df)
+                # Calculate score
+                sentiment_score = self.calculate_social_sentiment_score(social_sentiment_df)
+                if np.isnan(sentiment_score):
+                    sentiment_score = 0
 
             row = pd.DataFrame({'symbol': [symbol], 'social_sentiment_score': [sentiment_score]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)

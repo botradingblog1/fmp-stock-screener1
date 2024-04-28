@@ -1,6 +1,7 @@
 import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
+from utils.log_utils import *
 import time
 
 
@@ -62,12 +63,12 @@ class FmpAnalystRatingsLoader:
         #  Iterate through symbols
         results_df = pd.DataFrame({})
         for symbol in symbols:
-            print(f"Loading analyst ratings for {symbol}...")
+            logd(f"Loading analyst ratings for {symbol}...")
 
             # Fetch analyst data
             grades_df = self.fmp_client.get_analyst_ratings(symbol)
             if grades_df is None or len(grades_df) == 0:
-                print(f"No grades for {symbol}")
+                logw(f"No grades for {symbol}")
                 continue
 
             # Filter out data more than x months in the past
@@ -83,14 +84,11 @@ class FmpAnalystRatingsLoader:
             grades_df.to_csv(path)
 
             #  Add individual stock results to all results
-            total_rating = grades_df['total_rating'].ilog[0]
+            total_rating = grades_df['total_rating'].iloc[0]
             row = pd.DataFrame({'symbol': [symbol], 'analyst_rating_score': [total_rating]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
             # Throttle for API limit
             time.sleep(API_REQUEST_DELAY)
-
-        # Filter by minimum score
-        #all_grades_df = all_grades_df[all_grades_df['total_rating'] > MIN_ANALYST_RATINGS_SCORE]
 
         return results_df
