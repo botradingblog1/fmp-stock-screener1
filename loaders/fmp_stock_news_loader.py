@@ -1,8 +1,8 @@
 import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
-import time
 from utils.log_utils import *
+from utils.df_utils import cap_outliers
 import hashlib
 from langdetect import detect, LangDetectException
 from bs4 import BeautifulSoup
@@ -27,14 +27,6 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 class FmpStockNewsLoader:
     def __init__(self, fmp_api_key):
         self.fmp_client = FmpClient(fmp_api_key)
-
-    def generate_unique_id(self, row):
-        # Concatenate the required fields
-        record_string = f"{row['symbol']}{row['publishedDate']}{row['title']}{row['site']}"
-        # Encode to a byte string before hashing
-        encoded_string = record_string.encode()
-        # Create the MD5 hash and return the hexadecimal string
-        return hashlib.md5(encoded_string).hexdigest()
 
     def detect_english(self, text):
         try:
@@ -82,8 +74,12 @@ class FmpStockNewsLoader:
             print(f"An error occurred: {err}")
         return ""
 
+    def fetch_all_full_text(self, news_df):
+        news_df['full_text'] = news_df.apply(self.fetch_full_article_text, axis=1)
+        return news_df
+
     def detect_news_sentiment(self, row):
-        news_text = f"{row['title']} {row['full_text']}"
+        news_text = f"{row['title']} {row['text']}"
         if news_text:
             # Truncate the news_text to the max_length the model can handle
             tokens = tokenizer(news_text, return_tensors="pt", max_length=512, truncation=True,
@@ -111,9 +107,13 @@ class FmpStockNewsLoader:
         else:
             return 0.0  # Return 0.0 for empty or None text
 
+    def calculate_news_sentiment_score(self, news_df):
+        avg_news_sentiment = news_df['news_sentiment'].mean()
+        return avg_news_sentiment
+
     def fetch(self, symbol_list):
         #  Iterate through symbols
-        all_news_df = pd.DataFrame({})
+        results_df = pd.DataFrame({})
         for symbol in symbol_list:
             logd(f"Loading stock news for {symbol}...")
 
@@ -121,30 +121,36 @@ class FmpStockNewsLoader:
             limit = 5
             news_df = self.fmp_client.get_stock_news(symbol, limit)
             if news_df is None or len(news_df) == 0:
-                print(f"No news for {symbol}")
+                logw(f"No news for {symbol}")
                 continue
 
-            #  Add individual stock results to all results
-            all_news_df = pd.concat([all_news_df, news_df], axis=0, ignore_index=True)
+            # Filter - only keep news from last 30 days
+            start_date = datetime.today() - timedelta(days=30)
+            news_df = news_df[news_df['publishedDate'] >= start_date]
+
+            if len(news_df) == 0:
+                logw(f"No news stories in the last month for {symbol}")
+                continue
+
+            # Filter non-english news articles
+            news_df = self.filter_non_english_news_items(news_df)
+
+            # Fetch full news articles
+            #news_df = self.fetch_all_full_text(news_df)
+
+            # Detect news sentiment
+            news_df['news_sentiment'] = news_df.apply(self.detect_news_sentiment, axis=1)
+
+            # Calculate score
+            news_sentiment_score = self.calculate_news_sentiment_score(news_df)
+
+            row = pd.DataFrame({'symbol': [symbol], 'news_sentiment_score': [news_sentiment_score]})
+            results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
             # Throttle for API limit
-            time.sleep(api_request_delay)
+            time.sleep(API_REQUEST_DELAY)
 
-        # Fetch full news articles
-        all_news_df['full_text'] = all_news_df.apply(self.fetch_full_article_text, axis=1)
+        # Cap values
+        results_df = cap_outliers(results_df, 'news_sentiment_score')
 
-        # Get news sentiment
-        all_news_df['sentiment_score'] = all_news_df.apply(self.detect_news_sentiment, axis=1)
-
-        # Store results
-        file_name = "stock_news.csv"
-        path = os.path.join(CACHE_DIR, file_name)
-        all_news_df.to_csv(path)
-
-        # Group by 'symbol' and calculate mean and std of 'sentiment_score'
-        news_sentiment_stats_df = all_news_df.groupby('symbol')['sentiment_score'].agg(['mean', 'std']).reset_index()
-        file_name = "news_sentiment_stats_df.csv"
-        path = os.path.join(CACHE_DIR, file_name)
-        news_sentiment_stats_df.to_csv(path)
-
-        return news_sentiment_stats_df
+        return results_df

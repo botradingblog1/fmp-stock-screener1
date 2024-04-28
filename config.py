@@ -13,16 +13,29 @@ analyst_ratings_refresh_interval = DataRefreshInterval.WEEKLY
 fundamentals_refresh_interval = DataRefreshInterval.WEEKLY
 
 # Config variables
-fmp_calls_per_minute = 300
-api_request_delay = 60 / fmp_calls_per_minute
+FMP_CALLS_PER_MINUTE = 300
+API_REQUEST_DELAY = 60 / FMP_CALLS_PER_MINUTE
+RISK_FREE_RATE = 0.015  # Annualized average risk-free rate (3-month T-bill average)
+
+# Minimum criteria
+MIN_PRICE = 5.0  # Minimum price a security should have
+MIN_MOMENTUM_FACTOR = 0.0  # Minimum momentum factor value
+MIN_GROWTH_FACTOR = 0.0  # Minimum growth factor value
+MIN_DIVIDEND_YIELD = 0.0  # Minimum average dividend yield
+MIN_ANALYST_RATINGS_SCORE = 0.0   # Minimum average analyst ratings score
+
+# Cap values
+OUTLIER_STD_MULTIPLIER = 3  # Number of standard deviations used to deal with outliers
+MAX_MOMENTUM_CAP = 1.0  #
+MAX_GROWTH_CAP = 1.0  # Cap at 100% growth
 
 # Weights for B/O Screener Score - should add up to 1.0
-momentum_weight = 0.1
-growth_weight = 0.2
-quality_weight = 0.1
-analyst_ratings_weight = 0.15
-dividend_yield_weight = 0.2
-social_sentiment_weight = 0.05
-news_sentiment_weight = 0.1
+MOMENTUM_WEIGHT = 0.1
+GROWTH_WEIGHT = 0.2
+QUALITY_WEIGHT = 0.1
+ANALYST_RATINGS_WEIGHT = 0.15
+DIVIDEND_YIELD_WEIGHT = 0.2
+SOCIAL_SENTIMENT_WEIGHT = 0.05
+NEWS_SENTIMENT_WEIGHT = 0.1
 
 

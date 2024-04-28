@@ -22,6 +22,14 @@ class FmpStockListLoader:
                 loge("No securities found - exiting")
                 exit(0)
 
+            # Filter for stocks
+            securities_df = securities_df[securities_df['type'] == 'stock']
+
+            # Filter by exchange
+            mask = (securities_df['exchangeShortName'] == "NASDAQ") | (securities_df['exchangeShortName'] == "NYSE") | (
+                    securities_df['exchangeShortName'] == "AMEX")
+            securities_df = securities_df[mask]
+
             # Cache locally
             securities_df.to_csv(path)
         return securities_df

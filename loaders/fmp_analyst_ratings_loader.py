@@ -60,12 +60,12 @@ class FmpAnalystRatingsLoader:
         #  Fetch all symbols
         symbols = symbol_list
         #  Iterate through symbols
-        all_grades_df = pd.DataFrame({})
+        results_df = pd.DataFrame({})
         for symbol in symbols:
             print(f"Loading analyst ratings for {symbol}...")
 
             # Fetch analyst data
-            grades_df = self.fmp_client.fetch_analyst_ratings(symbol)
+            grades_df = self.fmp_client.get_analyst_ratings(symbol)
             if grades_df is None or len(grades_df) == 0:
                 print(f"No grades for {symbol}")
                 continue
@@ -77,18 +77,20 @@ class FmpAnalystRatingsLoader:
             # Aggregate counts
             grades_df = self.aggregate_rating_counts(symbol, grades_df)
 
+            # Store grades for review
+            file_name = f"{symbol}_analyst_ratings.csv"
+            path = os.path.join(CACHE_DIR, file_name)
+            grades_df.to_csv(path)
+
             #  Add individual stock results to all results
-            all_grades_df = pd.concat([all_grades_df, grades_df], axis=0, ignore_index=True)
+            total_rating = grades_df['total_rating'].ilog[0]
+            row = pd.DataFrame({'symbol': [symbol], 'analyst_rating_score': [total_rating]})
+            results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
             # Throttle for API limit
-            time.sleep(api_request_delay)
+            time.sleep(API_REQUEST_DELAY)
 
-        # Sort by total rating
-        all_grades_df.sort_values(by=['total_rating'], ascending=[False], inplace=True)
+        # Filter by minimum score
+        #all_grades_df = all_grades_df[all_grades_df['total_rating'] > MIN_ANALYST_RATINGS_SCORE]
 
-        # Store results
-        file_name = "analyst_ratings.csv"
-        path = os.path.join(RESULTS_DIR, file_name)
-        all_grades_df.to_csv(path)
-
-        return all_grades_df
+        return results_df

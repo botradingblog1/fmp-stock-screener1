@@ -65,16 +65,20 @@ class FmpDividendLoader:
     def cap_values(self, value, min_val, max_val):
         return max(min_val, min(value, max_val))
 
-    def fetch(self, symbol_list):
+    def fetch(self, symbol_list, prices_dict):
         dividend_results = []
         # Used to cap outlier values
         MAX_DIVIDEND_YIELD = 1000
         MIN_DIVIDEND_YIELD = 0
-        MAX_RETURN = 1000
-        MIN_RETURN = -1000
         LOOKBACK_DAYS = 365 * 3
         for symbol in symbol_list:
             logd(f"Fetching dividends for {symbol}...")
+
+            # Get prices
+            if symbol not in prices_dict:
+                logw(f"No prices for dividend calculation for {symbol}")
+                continue
+            prices_df = prices_dict[symbol]
 
             # Fetch dividends
             dividends_df = self.fmp_client.fetch_dividends(symbol)
@@ -85,11 +89,7 @@ class FmpDividendLoader:
             start_date = datetime.today() - timedelta(days=LOOKBACK_DAYS)
             dividends_df = dividends_df[dividends_df.index >= start_date]
 
-            # Fetch price history
-            prices_df = self.fmp_client.fetch_daily_prices(symbol)
-            if prices_df is None:
-                logw(f"Not enough price data for {symbol}")
-                continue
+            # Filter prices by start date
             prices_df = prices_df[prices_df.index >= start_date]
 
             # Calculate dividend yield
@@ -100,9 +100,7 @@ class FmpDividendLoader:
             std_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].std(), MIN_DIVIDEND_YIELD,
                                             MAX_DIVIDEND_YIELD)
 
-            dividend_results.append({'symbol': symbol,
-                            'avg_dividend_yield': avg_dividend_yield,
-                            'std_dividend_yield': std_dividend_yield})
+            dividend_results.append({'symbol': symbol, 'avg_dividend_yield': avg_dividend_yield})
         dividend_stats_df = pd.DataFrame(dividend_results)
 
         # Store results

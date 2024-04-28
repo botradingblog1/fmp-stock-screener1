@@ -1,33 +1,25 @@
 import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
-import time
 from utils.log_utils import *
+from utils.df_utils import cap_outliers
 from datetime import datetime, timedelta
-import re
 import time
-import requests
-from datetime import datetime, timedelta
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
-from typing import Tuple
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
-
-FINBERT_MAX_TOKENS = 512
-tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
-model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert").to(device)
-labels = ["positive", "negative", "neutral"]
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class FmpSocialSentimentLoader:
     def __init__(self, fmp_api_key):
         self.fmp_client = FmpClient(fmp_api_key)
 
+    def calculate_social_sentiment_score(self, sentiment_df):
+        mean_sentiment = sentiment_df['stocktwitsSentiment'].mean()
+
+        sentiment_score = mean_sentiment
+        return sentiment_score
+
     def fetch(self, symbol_list):
         #  Iterate through symbols
-        all_social_sentiment_df = pd.DataFrame({})
+        results_df = pd.DataFrame({})
         for symbol in symbol_list:
             logd(f"Loading social media sentiment for {symbol}...")
 
@@ -37,30 +29,22 @@ class FmpSocialSentimentLoader:
                 print(f"No social sentiment for {symbol}")
                 continue
 
-            #  Add individual stock results to all results
-            all_social_sentiment_df = pd.concat([all_social_sentiment_df, social_sentiment_df], axis=0, ignore_index=True)
+            # Filter - only keep records from last 30 days
+            start_date = datetime.today() - timedelta(days=30)
+            social_sentiment_df = social_sentiment_df[social_sentiment_df['date'] >= start_date]
+
+            # Calculate score
+            sentiment_score = self.calculate_social_sentiment_score(social_sentiment_df)
+
+            row = pd.DataFrame({'symbol': [symbol], 'social_sentiment_score': [sentiment_score]})
+            results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
             # Throttle for API limit
-            time.sleep(api_request_delay)
+            time.sleep(API_REQUEST_DELAY)
 
-        # Calculate likes ratio (likes / posts) - not needed. We can use 'stocktwitsSentiment'
-        # all_social_sentiment_df['social_sentiment_ratio'] = round(all_social_sentiment_df['stocktwitsLikes'] / all_social_sentiment_df['stocktwitsPosts'], 2)
+        # Cap values
+        results_df = cap_outliers(results_df, 'social_sentiment_score')
 
-        # Filter - only keep records from last 30 days
-        start_date = datetime.today() - timedelta(days=30)
-        all_social_sentiment_df = all_social_sentiment_df[all_social_sentiment_df['date'] >= start_date]
-
-        # Store results
-        file_name = "all_social_sentiment_df.csv"
-        path = os.path.join(CACHE_DIR, file_name)
-        all_social_sentiment_df.to_csv(path)
-
-        # Group by stocks and calculate mean / std
-        social_sentiment_stats_df = all_social_sentiment_df.groupby('symbol')['stocktwitsSentiment'].agg(['mean', 'std']).reset_index()
-        file_name = "social_sentiment_stats_df.csv"
-        path = os.path.join(CACHE_DIR, file_name)
-        social_sentiment_stats_df.to_csv(path)
-
-        return social_sentiment_stats_df
+        return results_df
 
 
