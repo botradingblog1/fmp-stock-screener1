@@ -20,8 +20,9 @@ class FmpSocialSentimentLoader:
     def fetch(self, symbol_list):
         #  Iterate through symbols
         results_df = pd.DataFrame({})
+        i = 1
         for symbol in symbol_list:
-            logd(f"Loading social media sentiment for {symbol}...")
+            logd(f"Loading social media sentiment for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch social sentiment
             social_sentiment_df = self.fmp_client.get_social_sentiment(symbol)
@@ -40,6 +41,8 @@ class FmpSocialSentimentLoader:
 
             row = pd.DataFrame({'symbol': [symbol], 'social_sentiment_score': [sentiment_score]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
+
+            i += 1
 
             # Throttle for API limit
             time.sleep(API_REQUEST_DELAY)

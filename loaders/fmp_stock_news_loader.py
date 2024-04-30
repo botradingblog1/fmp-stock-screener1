@@ -114,8 +114,9 @@ class FmpStockNewsLoader:
     def fetch(self, symbol_list):
         #  Iterate through symbols
         results_df = pd.DataFrame({})
+        i = 1
         for symbol in symbol_list:
-            logd(f"Loading stock news for {symbol}...")
+            logd(f"Loading stock news for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch news
             limit = 5
@@ -148,8 +149,10 @@ class FmpStockNewsLoader:
             row = pd.DataFrame({'symbol': [symbol], 'news_sentiment_score': [news_sentiment_score]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
+            i += 1
             # Throttle for API limit
             time.sleep(API_REQUEST_DELAY)
+
 
         # Cap values
         results_df = cap_outliers(results_df, 'news_sentiment_score')

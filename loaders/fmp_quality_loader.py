@@ -38,8 +38,9 @@ class FmpQualityLoader:
 
     def fetch(self, symbol_list):
         quality_results_df = pd.DataFrame()
+        i = 1
         for symbol in symbol_list:
-            logd(f"Fetching quality factor for {symbol}...")
+            logd(f"Fetching quality factor for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch ratios
             ratios_df = self.fmp_client.get_financial_ratios(symbol, period="annual")
@@ -54,6 +55,11 @@ class FmpQualityLoader:
 
             row = pd.DataFrame({'symbol': [symbol], 'quality_factor': [quality_factor]})
             quality_results_df = pd.concat([quality_results_df, row], axis=0, ignore_index=True)
+
+            i += 1
+
+            # Throttle for API limit
+            time.sleep(API_REQUEST_DELAY)
 
         # Cap outliers in the growth factor results
         quality_results_df = self.cap_outliers(quality_results_df)

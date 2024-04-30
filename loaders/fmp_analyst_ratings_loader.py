@@ -61,9 +61,10 @@ class FmpAnalystRatingsLoader:
         #  Fetch all symbols
         symbols = symbol_list
         #  Iterate through symbols
+        i = 1
         results_df = pd.DataFrame({})
         for symbol in symbols:
-            logd(f"Loading analyst ratings for {symbol}...")
+            logd(f"Loading analyst ratings for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch analyst data
             grades_df = self.fmp_client.get_analyst_ratings(symbol)
@@ -87,6 +88,8 @@ class FmpAnalystRatingsLoader:
             total_rating = grades_df['total_rating'].iloc[0]
             row = pd.DataFrame({'symbol': [symbol], 'analyst_rating_score': [total_rating]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
+
+            i += 1
 
             # Throttle for API limit
             time.sleep(API_REQUEST_DELAY)

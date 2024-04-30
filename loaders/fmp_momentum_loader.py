@@ -33,8 +33,9 @@ class FmpMomentumLoader:
     def fetch(self, symbol_list, prices_dict):
         momentum_df = pd.DataFrame()
         lookback_days = 400
+        i = 1
         for symbol in symbol_list:
-            logd(f"Calculating momentum for {symbol}...")
+            logd(f"Calculating momentum for {symbol}... ({i}/{len(symbol_list)})")
 
             # Get prices
             if symbol not in prices_dict:
@@ -60,6 +61,7 @@ class FmpMomentumLoader:
 
             row = pd.DataFrame({'symbol': [symbol], 'momentum_factor': [momentum_factor]})
             momentum_df = pd.concat([momentum_df, row], axis=0, ignore_index=True)
+            i += 1
 
         # Cap outliers
         momentum_df = cap_outliers(momentum_df, 'momentum_factor')

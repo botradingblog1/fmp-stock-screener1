@@ -22,8 +22,9 @@ class FmpGrowthLoader:
 
     def fetch(self, symbol_list):
         growth_results_df = pd.DataFrame()
+        i = 1
         for symbol in symbol_list:
-            logd(f"Fetching growth for {symbol}...")
+            logd(f"Fetching growth for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch growth
             growth_df = self.fmp_client.get_income_growth(symbol, period="annual")
@@ -38,6 +39,12 @@ class FmpGrowthLoader:
 
             row = pd.DataFrame({'symbol': [symbol], 'growth_factor': [growth_factor]})
             growth_results_df = pd.concat([growth_results_df, row], axis=0, ignore_index=True)
+
+            i += 1
+
+            # Throttle for API limit
+            time.sleep(API_REQUEST_DELAY)
+
 
         # Cap outliers in the growth factor results
         growth_results_df = cap_outliers(growth_results_df, 'growth_factor')

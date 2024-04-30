@@ -77,7 +77,7 @@ def run():
     analyst_ratings_loader = FmpAnalystRatingsLoader(FMP_API_KEY)
     analyst_grades_df = analyst_ratings_loader.fetch(symbol_list)
 
-    # Filter symbols that have minimum analyst ratings score
+    # Filter symbols that have analyst ratings score
     symbol_list = analyst_grades_df['symbol'].unique()
 
     # Load dividend info
@@ -105,14 +105,14 @@ def run():
     # Normalize score values
     norm_df = normalize_dataframe(merged_df)
 
-    # Calculate B/O score (no, not 'Body Odor';)
+    # Calculate B/O score (no, not 'Body Odor' ;)
     bo_score_df = calculate_bo_score(norm_df)
 
     # Round values
     bo_score_df = round_dataframe_columns(bo_score_df, precision=ROUND_PRECISION)
 
-    # Only keep top items
-    bo_score_df = bo_score_df.head(500)
+    # Only keep top items - optional
+    # bo_score_df = bo_score_df.head(500)
 
     # Store results
     file_name = "bo_score_df.csv"
