@@ -2,6 +2,7 @@ import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
 from utils.log_utils import *
+from utils.file_utils import *
 import time
 from datetime import datetime, timedelta
 import numpy as np
@@ -12,7 +13,11 @@ class FmpMomentumLoader:
     def __init__(self, fmp_api_key):
         self.fmp_client = FmpClient(fmp_api_key)
 
-    def calculate_momentum_factor(self, prices_df):
+    def calculate_momentum_factor(self, symbol, prices_df):
+        # Check minimum length
+        if len(prices_df) < 252:
+            logw(f"Not enough price data for {symbol}")
+            return 0
         # Current price (latest)
         current_price = prices_df['close'][-2]  # NOTE: -2 because -1 is the current incomplete bar in live trading
 
@@ -46,18 +51,10 @@ class FmpMomentumLoader:
             # Fetch price history
             start_date = datetime.today() - timedelta(days=lookback_days)
             prices_df = prices_df[prices_df.index >= start_date]
-            print(len(prices_df))
-
-            # Check minimum length
-            if len(prices_df) < 252:
-                logw(f"Not enough price data for {symbol}")
-                continue
+            store_csv(CACHE_DIR, f"{symbol}_prices.csv", prices_df)
 
             # Calculate momentum factor
-            momentum_factor = self.calculate_momentum_factor(prices_df)
-            if momentum_factor < MIN_MOMENTUM_FACTOR:
-                logw(f"{symbol} does not meet minimum Momentum Factor of {MIN_MOMENTUM_FACTOR}")
-                continue
+            momentum_factor = self.calculate_momentum_factor(symbol, prices_df)
 
             row = pd.DataFrame({'symbol': [symbol], 'momentum_factor': [momentum_factor]})
             momentum_df = pd.concat([momentum_df, row], axis=0, ignore_index=True)

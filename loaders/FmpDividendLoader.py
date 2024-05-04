@@ -2,6 +2,7 @@ import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
 from utils.log_utils import *
+from utils.file_utils import *
 import time
 from datetime import datetime, timedelta
 import numpy as np
@@ -92,6 +93,7 @@ class FmpDividendLoader:
                     # Filter by date
                     start_date = datetime.today() - timedelta(days=LOOKBACK_DAYS)
                     dividends_df = dividends_df[dividends_df.index >= start_date]
+                    store_csv(CACHE_DIR, f"{symbol}_dividends.csv", dividends_df)
                     if len(dividends_df) == 0:
                         logw(f"Not enough dividend data for {symbol}")
                         avg_dividend_yield = 0

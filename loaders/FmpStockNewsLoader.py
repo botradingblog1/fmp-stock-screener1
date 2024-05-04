@@ -2,6 +2,7 @@ import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
 from utils.log_utils import *
+from utils.file_utils import *
 from utils.df_utils import cap_outliers
 import hashlib
 from langdetect import detect, LangDetectException
@@ -108,8 +109,16 @@ class FmpStockNewsLoader:
             return 0.0  # Return 0.0 for empty or None text
 
     def calculate_news_sentiment_score(self, news_df):
-        avg_news_sentiment = news_df['news_sentiment'].mean()
-        return avg_news_sentiment
+        if news_df is None or len(news_df) == 0:
+            return 0
+
+        avg_sentiment = news_df['news_sentiment'].mean()
+        std_dev = news_df['news_sentiment'].std()
+        article_count = len(news_df)
+
+        news_sentiment_score = avg_sentiment * article_count - std_dev
+
+        return news_sentiment_score
 
     def fetch(self, symbol_list):
         #  Iterate through symbols
@@ -142,6 +151,7 @@ class FmpStockNewsLoader:
 
                 # Detect news sentiment
                 news_df['news_sentiment'] = news_df.apply(self.detect_news_sentiment, axis=1)
+                store_csv(CACHE_DIR, f"{symbol}_news.csv", news_df)
 
                 # Calculate score
                 news_sentiment_score = self.calculate_news_sentiment_score(news_df)
@@ -152,7 +162,6 @@ class FmpStockNewsLoader:
             i += 1
             # Throttle for API limit
             time.sleep(API_REQUEST_DELAY)
-
 
         # Cap values
         results_df = cap_outliers(results_df, 'news_sentiment_score')

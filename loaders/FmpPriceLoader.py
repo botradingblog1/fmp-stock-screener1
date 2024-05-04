@@ -22,19 +22,14 @@ class FmpPriceLoader:
 
             # Fetch price history
             start_date = datetime.today() - timedelta(days=lookback_days)
+            start_date_str = start_date.strftime("%Y-%m-%d")
+            end_date = datetime.today()
+            end_date_str = end_date.strftime("%Y-%m-%d")
 
-            prices_df = self.fmp_client.fetch_daily_prices(symbol)
+            prices_df = self.fmp_client.fetch_daily_prices(symbol, start_date_str, end_date_str)
             if prices_df is None or len(prices_df) < 252:
                 logw(f"Not enough price data for {symbol}")
                 continue
-
-            # Check for min price requirement
-            last_price = prices_df['close'].iloc[0]  # Get most recent price
-            if last_price < MIN_PRICE:
-                logi(f"{symbol} price doesn't meet minimum of {MIN_PRICE}")
-                continue
-
-            prices_df = prices_df[prices_df.index >= start_date]          
 
             prices_dict[symbol] = prices_df
 

@@ -3,8 +3,8 @@ pandas
 loguru
 requests
 langdetect
-beautifulsoup4
 lxml
 transformers
 torch
 scikit-learn
+schedule

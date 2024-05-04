@@ -1,27 +1,24 @@
 from utils.file_utils import *
-from loaders.fmp_stock_list_loader import FmpStockListLoader
-from loaders.fmp_analyst_ratings_loader import FmpAnalystRatingsLoader
-from loaders.fmp_stock_news_loader import FmpStockNewsLoader
-from loaders.fmp_social_sentiment_loader import FmpSocialSentimentLoader
-from loaders.fmp_dividend_loader import FmpDividendLoader
-from loaders.fmp_price_loader import FmpPriceLoader
-from loaders.fmp_momentum_loader import FmpMomentumLoader
-from loaders.fmp_growth_loader import FmpGrowthLoader
-from loaders.fmp_quality_loader import FmpQualityLoader
-import pandas as pd
+from loaders.FmpStockListLoader import FmpStockListLoader
+from loaders.FmpAnalystRatingsLoader import FmpAnalystRatingsLoader
+from loaders.FmpStockNewsLoader import FmpStockNewsLoader
+from loaders.FmpSocialSentimentLoader import FmpSocialSentimentLoader
+from loaders.FmpDividendLoader import FmpDividendLoader
+from loaders.FmpPriceLoader import FmpPriceLoader
+from loaders.FmpMomentumLoader import FmpMomentumLoader
+from loaders.FmpGrowthLoader import FmpGrowthLoader
+from loaders.FmpQualityLoader import FmpQualityLoader
 from utils.df_utils import *
-from config import *
+from utils.file_utils import get_os_variable
 from utils.log_utils import *
+import schedule
 
 
 # Advanced stock screener considering factors, dividend yield and analyst ratings
 
 
 # Get API key from environment variables
-if 'FMP_API_KEY' not in os.environ:
-    print('FMP_API_KEY not set - exiting')
-    exit(0)
-FMP_API_KEY = os.environ['FMP_API_KEY']
+FMP_API_KEY = get_os_variable('FMP_API_KEY')
 
 
 def calculate_bo_score(df):
@@ -30,7 +27,6 @@ def calculate_bo_score(df):
                      df['quality_factor'] * QUALITY_WEIGHT + \
                      df['analyst_rating_score'] * ANALYST_RATINGS_WEIGHT + \
                      df['avg_dividend_yield'] * DIVIDEND_YIELD_WEIGHT + \
-                     df['social_sentiment_score'] * SOCIAL_SENTIMENT_WEIGHT + \
                      df['news_sentiment_score'] * NEWS_SENTIMENT_WEIGHT
 
     # Sort by score
@@ -41,18 +37,19 @@ def calculate_bo_score(df):
 def run():
     # Load stock list
     stock_list_loader = FmpStockListLoader(FMP_API_KEY)
-    securities_df = stock_list_loader.fetch()
-
-    # Get all price info so we can filter by min price
-    price_loader = FmpPriceLoader(FMP_API_KEY)
-    all_prices_df = price_loader.fetch_all()
-    all_prices_df = all_prices_df[all_prices_df['lastSalePrice'] >= MIN_PRICE]
-
-    # Inner join the dataframes
-    merged_df = merge_dataframes_how([all_prices_df, securities_df], how='inner')
-    symbol_list = merged_df['symbol'].unique()
+    stock_list_df = stock_list_loader.fetch_list(
+        exchange_list=EXCHANGE_LIST,
+        min_market_cap=MIN_MARKET_CAP,
+        min_price=MIN_PRICE,
+        max_beta=MAX_BETA,
+        min_volume=MIN_VOLUME,
+        country=COUNTRY,
+        stock_list_limit=STOCK_LIST_LIMIT
+    )
+    symbol_list = stock_list_df['symbol'].unique()
 
     # Load price info
+    price_loader = FmpPriceLoader(FMP_API_KEY)
     prices_dict = price_loader.fetch(symbol_list)
 
     # Get all symbols that have prices
@@ -70,23 +67,18 @@ def run():
     momentum_loader = FmpMomentumLoader(FMP_API_KEY)
     momentum_df = momentum_loader.fetch(symbol_list, prices_dict)
 
-    # Filter symbols that have momentum
-    symbol_list = momentum_df['symbol'].unique()
-
     # Load analyst ratings
     analyst_ratings_loader = FmpAnalystRatingsLoader(FMP_API_KEY)
     analyst_grades_df = analyst_ratings_loader.fetch(symbol_list)
-
-    # Filter symbols that have analyst ratings score
-    symbol_list = analyst_grades_df['symbol'].unique()
 
     # Load dividend info
     dividend_loader = FmpDividendLoader(FMP_API_KEY)
     dividend_stats_df = dividend_loader.fetch(symbol_list, prices_dict)
 
     # Load social sentiment
-    social_sentiment_loader = FmpSocialSentimentLoader(FMP_API_KEY)
-    social_sentiment_stats_df = social_sentiment_loader.fetch(symbol_list)
+    #social_sentiment_loader = FmpSocialSentimentLoader(FMP_API_KEY)
+    #social_sentiment_stats_df = social_sentiment_loader.fetch(symbol_list)
+    social_sentiment_stats_df = pd.DataFrame({'symbol': [''], 'social_sentiment_score': [0] })
 
     # Load stock news
     stock_news_loader = FmpStockNewsLoader(FMP_API_KEY)
@@ -98,7 +90,6 @@ def run():
         momentum_df,
         analyst_grades_df,
         dividend_stats_df,
-        social_sentiment_stats_df,
         stock_news_df]
     merged_df = merge_dataframes(symbol_list, df_list)
 
@@ -111,9 +102,6 @@ def run():
     # Round values
     bo_score_df = round_dataframe_columns(bo_score_df, precision=ROUND_PRECISION)
 
-    # Only keep top items - optional
-    # bo_score_df = bo_score_df.head(500)
-
     # Store results
     file_name = "bo_score_df.csv"
     path = os.path.join(RESULTS_DIR, file_name)
@@ -122,10 +110,31 @@ def run():
     logi('All done')
 
 
+def perform_cleanup():
+    # Cleanup log file to avoid excessive growth
+    delete_file(CACHE_DIR, LOG_FILE_NAME)
+
+
+def schedule_events():
+    schedule.every().monday.at('01:00').do(run)
+
+    schedule.every().sunday.at('01:00').do(perform_cleanup)
+
+
 if __name__ == "__main__":
     create_output_directories()
+    setup_logger(LOG_FILE_NAME)
 
     # Run this thing!
     run()
 
+    """
+    #  Schedule events
+    schedule_events()
+
+    #  Check schedule
+    while True:
+        schedule.run_pending()
+        time.sleep(10)  # Check time every x seconds
+    """
 

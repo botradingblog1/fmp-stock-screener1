@@ -11,6 +11,25 @@ class FmpClient:
     def __init__(self, fmp_api_key):
         self._api_key = fmp_api_key
 
+    def fetch_stock_screener_results(self, exchange_list="nyse,nasdaq,amex&limit", market_cap_more_than=2000000000, priceMoreThan=10, volume_more_than=100000, beta_lower_than=1, country='US', limit=1000):
+        try:
+            url = f"https://financialmodelingprep.com/api/v3/stock-screener?exchange={exchange_list}&limit={limit}&marketCapMoreThan={market_cap_more_than}&betaLowerThan={beta_lower_than}&volumeMoreThan={volume_more_than}&country={country}&priceMoreThan={priceMoreThan}&isActivelyTrading=true&isFund=false&isEtf=false&apikey={self._api_key}"
+            logd(url)
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                securities_data = response.json()
+                if securities_data:
+                    securities_df = pd.DataFrame(securities_data)
+
+                    return securities_df
+                return None
+            else:
+                return None
+        except Exception as ex:
+            print(ex)
+            return None
+
     def fetch_tradable_list(self):
         try:
             url = f"https://financialmodelingprep.com/api/v3/available-traded/list?apikey={self._api_key}"
@@ -128,9 +147,9 @@ class FmpClient:
             loge(ex)
             return None
 
-    def fetch_daily_prices(self, symbol):
+    def fetch_daily_prices(self, symbol, start_date_str, end_date_str):
         try:
-            url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?apikey={self._api_key}&serietype=line"
+            url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?from={start_date_str}&to={end_date_str}&apikey={self._api_key}&serietype=line"
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()
@@ -139,6 +158,7 @@ class FmpClient:
                     prices_df = pd.DataFrame(historical_data)
                     prices_df['date'] = pd.to_datetime(prices_df['date'])
                     prices_df.set_index('date', inplace=True)
+                    prices_df.sort_index(ascending=True, inplace=True)
                     return prices_df
                 else:
                     return None

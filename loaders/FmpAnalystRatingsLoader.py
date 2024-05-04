@@ -2,6 +2,7 @@ import pandas as pd
 from config import *
 from utils.fmp_client import FmpClient
 from utils.log_utils import *
+from utils.file_utils import *
 import time
 
 
@@ -80,9 +81,7 @@ class FmpAnalystRatingsLoader:
             grades_df = self.aggregate_rating_counts(symbol, grades_df)
 
             # Store grades for review
-            file_name = f"{symbol}_analyst_ratings.csv"
-            path = os.path.join(CACHE_DIR, file_name)
-            grades_df.to_csv(path)
+            store_csv(CACHE_DIR, f"{symbol}_analyst_ratings.csv", grades_df)
 
             #  Add individual stock results to all results
             total_rating = grades_df['total_rating'].iloc[0]
