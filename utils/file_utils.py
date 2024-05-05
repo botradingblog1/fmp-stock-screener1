@@ -12,6 +12,8 @@ def create_output_directories():
 
 
 def store_csv(directory, file_name, df):
+    if df is None:
+        return
     path = os.path.join(directory, file_name)
     if os.path.exists(directory):
         df.to_csv(path)

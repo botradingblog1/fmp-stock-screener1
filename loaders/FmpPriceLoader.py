@@ -17,8 +17,9 @@ class FmpPriceLoader:
     def fetch(self, symbol_list):
         prices_dict = {}
         lookback_days = 365 * 3
+        i = 1
         for symbol in symbol_list:
-            logd(f"Fetching prices for {symbol}...")
+            logd(f"Fetching prices for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch price history
             start_date = datetime.today() - timedelta(days=lookback_days)
@@ -32,6 +33,7 @@ class FmpPriceLoader:
                 continue
 
             prices_dict[symbol] = prices_df
+            i += 1
 
         return prices_dict
 

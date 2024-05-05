@@ -113,14 +113,13 @@ class FmpStockNewsLoader:
             return 0
 
         avg_sentiment = news_df['news_sentiment'].mean()
-        std_dev = news_df['news_sentiment'].std()
         article_count = len(news_df)
 
-        news_sentiment_score = avg_sentiment * article_count - std_dev
+        news_sentiment_score = avg_sentiment * article_count
 
         return news_sentiment_score
 
-    def fetch(self, symbol_list):
+    def fetch(self, symbol_list, news_article_limit):
         #  Iterate through symbols
         results_df = pd.DataFrame({})
         i = 1
@@ -128,8 +127,7 @@ class FmpStockNewsLoader:
             logd(f"Loading stock news for {symbol}... ({i}/{len(symbol_list)})")
 
             # Fetch news
-            limit = 5
-            news_df = self.fmp_client.get_stock_news(symbol, limit)
+            news_df = self.fmp_client.get_stock_news(symbol, news_article_limit)
             if news_df is None or len(news_df) == 0:
                 logw(f"No news for {symbol}")
                 continue

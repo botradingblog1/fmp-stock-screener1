@@ -58,18 +58,34 @@ def run():
     # Load Quality factor
     quality_loader = FmpQualityLoader(FMP_API_KEY)
     quality_df = quality_loader.fetch(symbol_list)
+
+    # Filter out stocks based on min score
+    quality_df = quality_df[quality_df['quality_factor'] >= MIN_QUALITY_FACTOR]
+    symbol_list = quality_df['symbol'].unique()
     
     # Load Growth factor
     growth_loader = FmpGrowthLoader(FMP_API_KEY)
     growth_df = growth_loader.fetch(symbol_list)
+
+    # Filter out stocks based on min score
+    growth_df = growth_df[growth_df['growth_factor'] >= MIN_GROWTH_FACTOR]
+    symbol_list = growth_df['symbol'].unique()
     
     # Load Momentum factor
     momentum_loader = FmpMomentumLoader(FMP_API_KEY)
     momentum_df = momentum_loader.fetch(symbol_list, prices_dict)
 
+    # Filter out stocks based on min score
+    momentum_df = momentum_df[momentum_df['momentum_factor'] >= MIN_MOMENTUM_FACTOR]
+    symbol_list = momentum_df['symbol'].unique()
+
     # Load analyst ratings
     analyst_ratings_loader = FmpAnalystRatingsLoader(FMP_API_KEY)
     analyst_grades_df = analyst_ratings_loader.fetch(symbol_list)
+
+    # Filter out stocks based on min score
+    analyst_grades_df = analyst_grades_df[analyst_grades_df['analyst_rating_score'] >= MIN_ANALYST_RATINGS_SCORE]
+    symbol_list = analyst_grades_df['symbol'].unique()
 
     # Load dividend info
     dividend_loader = FmpDividendLoader(FMP_API_KEY)
@@ -82,7 +98,7 @@ def run():
 
     # Load stock news
     stock_news_loader = FmpStockNewsLoader(FMP_API_KEY)
-    stock_news_df = stock_news_loader.fetch(symbol_list)
+    stock_news_df = stock_news_loader.fetch(symbol_list, NEWS_ARTICLE_LIMIT)
 
     # Merge all dataframes by symbol
     df_list = [quality_df,

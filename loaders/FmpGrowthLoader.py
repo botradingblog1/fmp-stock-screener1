@@ -3,8 +3,6 @@ from config import *
 from utils.fmp_client import FmpClient
 from utils.log_utils import *
 import time
-from datetime import datetime, timedelta
-import numpy as np
 from utils.df_utils import cap_outliers
 from utils.file_utils import *
 
@@ -31,12 +29,22 @@ class FmpGrowthLoader:
         for symbol in symbol_list:
             logd(f"Fetching growth for {symbol}... ({i}/{len(symbol_list)})")
 
-            # Fetch growth
-            growth_df = self.fmp_client.get_income_growth(symbol, period="quarterly")
-            store_csv(CACHE_DIR, f"{symbol}_growth.csv", growth_df)
+            # Fetch quarterly growth
+            quarterly_growth_df = self.fmp_client.get_income_growth(symbol, period="quarterly")
+            store_csv(CACHE_DIR, f"{symbol}_quarterly_growth.csv", quarterly_growth_df)
 
-            # Calculate Growth factor
-            growth_factor = self.calculate_growth_factor(symbol, growth_df)
+            # Calculate growth factor
+            quarterly_growth_factor = self.calculate_growth_factor(symbol, quarterly_growth_df)
+
+            # Fetch annual growth
+            annual_growth_df = self.fmp_client.get_income_growth(symbol, period="annual")
+            store_csv(CACHE_DIR, f"{symbol}_annual_growth.csv", annual_growth_df)
+
+            # Calculate annual growth factor
+            annual_growth_factor = self.calculate_growth_factor(symbol, annual_growth_df)
+
+            # Combine annual and quarterly growth
+            growth_factor = 0.6 * quarterly_growth_factor + 0.4 + annual_growth_factor
 
             row = pd.DataFrame({'symbol': [symbol], 'growth_factor': [growth_factor]})
             growth_results_df = pd.concat([growth_results_df, row], axis=0, ignore_index=True)
