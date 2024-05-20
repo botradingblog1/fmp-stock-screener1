@@ -30,6 +30,40 @@ class FmpClient:
             print(ex)
             return None
 
+    def fetch_daily_prices(self, symbol, start_date_str, end_date_str):
+        try:
+            file_name = f"{symbol}-{start_date_str}-{end_date_str}-prices.csv"
+            path = os.path.join(CACHE_DIR, file_name)
+            if os.path.exists(path):
+                prices_df = pd.read_csv(path)
+                prices_df['date'] = pd.to_datetime(prices_df['date'])
+                prices_df.set_index('date', inplace=True)
+                return prices_df
+            else:
+                # Load remotely
+                url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{symbol}?from={start_date_str}&to={end_date_str}&apikey={self._api_key}&serietype=line"
+                response = requests.get(url)
+                if response.status_code == 200:
+                    data = response.json()
+                    historical_data = data.get('historical', [])
+                    if historical_data:
+                        prices_df = pd.DataFrame(historical_data)
+                        prices_df['date'] = pd.to_datetime(prices_df['date'])
+                        prices_df.set_index('date', inplace=True)
+                        prices_df.sort_index(ascending=True, inplace=True)
+
+                        # Cache price file
+                        prices_df.to_csv(path)
+
+                        return prices_df
+                    else:
+                        return None
+                else:
+                    return None
+        except Exception as ex:
+            print(ex)
+            return None
+
     def fetch_tradable_list(self):
         try:
             url = f"https://financialmodelingprep.com/api/v3/available-traded/list?apikey={self._api_key}"

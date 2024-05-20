@@ -36,15 +36,49 @@ class FmpDividendLoader:
             print(ex)
             return None, None
 
+
     def calculate_average_price_per_year(self, prices_df):
         try:
             # Resample and calculate the average yearly price
-            average_prices_df = prices_df['close'].resample('Y').mean()
+            average_prices_df = prices_df['close'].resample('Y').mean().to_frame()
+
+            # Rename the column for clarity
+            average_prices_df.columns = ['avg_annual_price']
+
+            average_prices_df.index = average_prices_df.index.year  # Convert index to use year only
+
             return average_prices_df
         except Exception as ex:
             print(f"Exception in calculating average prices: {ex}")
             return None
 
+    def calculate_dividend_yield(self, dividends_df, prices_df):
+        try:
+            if dividends_df is None or len(dividends_df) == 0 or prices_df is None or len(prices_df) == 0:
+                return 0
+            # Group dividend payments by year and calculate average dividend per payment
+            avg_dividend_per_payment = dividends_df.groupby(dividends_df.index.year)['adjDividend'].mean().to_frame()
+            avg_dividend_per_payment.columns = ['avg_adj_dividend']
+
+            # Calculate average price per year
+            avg_prices_df = self.calculate_average_price_per_year(prices_df)
+
+
+            # Merge average dividend and average price dataframes
+            annual_dividends_df = pd.merge(avg_dividend_per_payment, avg_prices_df, left_index=True, right_index=True,
+                                           how='left')
+
+            # Calculate dividend yield
+            annual_dividends_df['dividend_yield'] = round(
+                (annual_dividends_df['avg_adj_dividend'] / annual_dividends_df['avg_annual_price']) * 100,
+                2)  # Yield in percentage
+
+            return annual_dividends_df
+        except Exception as ex:
+            print(f"Exception in calculating dividends and yield: {ex}")
+            return None
+
+    """
     def calculate_dividend_yield(self, dividends_df, prices_df):
         try:
             # Total dividend payments per year
@@ -63,6 +97,7 @@ class FmpDividendLoader:
         except Exception as ex:
             print(f"Exception in calculating dividends and yield: {ex}")
             return None
+    """
 
     def cap_values(self, value, min_val, max_val):
         return max(min_val, min(value, max_val))
@@ -105,8 +140,6 @@ class FmpDividendLoader:
                         annual_dividends_df = self.calculate_dividend_yield(dividends_df, prices_df)
                         # Cap dividend values
                         avg_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].mean(), MIN_DIVIDEND_YIELD,
-                                                        MAX_DIVIDEND_YIELD)
-                        std_dividend_yield = self.cap_values(annual_dividends_df['dividend_yield'].std(), MIN_DIVIDEND_YIELD,
                                                         MAX_DIVIDEND_YIELD)
 
             dividend_results.append({'symbol': symbol, 'avg_dividend_yield': avg_dividend_yield})

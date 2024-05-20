@@ -21,16 +21,17 @@ import schedule
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 
 
-def calculate_bo_score(df):
-    df['bo_score'] = df['momentum_factor'] * MOMENTUM_WEIGHT + \
-                     df['growth_factor'] * GROWTH_WEIGHT + \
-                     df['quality_factor'] * QUALITY_WEIGHT + \
-                     df['analyst_rating_score'] * ANALYST_RATINGS_WEIGHT + \
-                     df['avg_dividend_yield'] * DIVIDEND_YIELD_WEIGHT + \
-                     df['news_sentiment_score'] * NEWS_SENTIMENT_WEIGHT
+def calculate_ultimate_score(df, profile):
+    df['ultimate_score'] = df['momentum_factor'] * profile['MOMENTUM_WEIGHT'] + \
+                     df['growth_factor'] * profile['GROWTH_WEIGHT'] + \
+                     df['quality_factor'] * profile['QUALITY_WEIGHT'] + \
+                     df['analyst_rating_score'] * profile['ANALYST_RATINGS_WEIGHT'] + \
+                     df['avg_dividend_yield'] * profile['DIVIDEND_YIELD_WEIGHT'] + \
+                     df['news_sentiment_score'] * profile['NEWS_SENTIMENT_WEIGHT'] + \
+                     df['social_sentiment_score'] * profile['SOCIAL_SENTIMENT_WEIGHT']
 
-    # Sort by score
-    df.sort_values(by=['bo_score'], ascending=[False], inplace=True)
+    # Sort results by score
+    df.sort_values(by=['ultimate_score'], ascending=[False], inplace=True)
     return df
 
 
@@ -92,9 +93,8 @@ def run():
     dividend_stats_df = dividend_loader.fetch(symbol_list, prices_dict)
 
     # Load social sentiment
-    #social_sentiment_loader = FmpSocialSentimentLoader(FMP_API_KEY)
-    #social_sentiment_stats_df = social_sentiment_loader.fetch(symbol_list)
-    social_sentiment_stats_df = pd.DataFrame({'symbol': [''], 'social_sentiment_score': [0] })
+    social_sentiment_loader = FmpSocialSentimentLoader(FMP_API_KEY)
+    social_sentiment_stats_df = social_sentiment_loader.fetch(symbol_list)
 
     # Load stock news
     stock_news_loader = FmpStockNewsLoader(FMP_API_KEY)
@@ -106,6 +106,7 @@ def run():
         momentum_df,
         analyst_grades_df,
         dividend_stats_df,
+        social_sentiment_stats_df,
         stock_news_df]
     merged_df = merge_dataframes(symbol_list, df_list)
 
@@ -113,15 +114,15 @@ def run():
     norm_df = normalize_dataframe(merged_df)
 
     # Calculate B/O score (no, not 'Body Odor' ;)
-    bo_score_df = calculate_bo_score(norm_df)
+    ultimate_score_df = calculate_ultimate_score(norm_df, PROFILE)
 
     # Round values
-    bo_score_df = round_dataframe_columns(bo_score_df, precision=ROUND_PRECISION)
+    ultimate_score_df = round_dataframe_columns(ultimate_score_df, precision=ROUND_PRECISION)
 
     # Store results
-    file_name = "bo_score_df.csv"
+    file_name = f"ultimate_screener_results_{PROFILE_NAME}.csv"
     path = os.path.join(RESULTS_DIR, file_name)
-    bo_score_df.to_csv(path)
+    ultimate_score_df.to_csv(path)
 
     logi('All done')
 
@@ -132,9 +133,8 @@ def perform_cleanup():
 
 
 def schedule_events():
-    schedule.every().monday.at('01:00').do(run)
-
     schedule.every().sunday.at('01:00').do(perform_cleanup)
+    schedule.every().sunday.at('01:01').do(run)
 
 
 if __name__ == "__main__":
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     run()
 
     """
-    #  Schedule events
+    #  Schedule events - to run the script at regular intervals
     schedule_events()
 
     #  Check schedule

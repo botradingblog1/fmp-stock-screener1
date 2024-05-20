@@ -9,9 +9,9 @@ LOG_FILE_NAME = "stock-screener1-log.txt"
 
 # Variables for coarse selection
 EXCHANGE_LIST = "nyse,nasdaq,amex"
-MIN_MARKET_CAP = 1000000000  # billion
+MIN_MARKET_CAP = 2000000000  # billion
 MIN_PRICE = 10  # dollars
-MAX_BETA = 1.8
+MAX_BETA = 1.6
 MIN_VOLUME = 100000  # Average daily trading volume
 COUNTRY = 'US'
 STOCK_LIST_LIMIT = 3000
@@ -37,12 +37,36 @@ MAX_MOMENTUM_CAP = 1.0  # Cap at 100%
 MAX_GROWTH_CAP = 1.0  # Cap at 100%
 
 # Weights for B/O Screener Score - should add up to 1.0
-MOMENTUM_WEIGHT = 0.2
-GROWTH_WEIGHT = 0.2
-QUALITY_WEIGHT = 0.10
-ANALYST_RATINGS_WEIGHT = 0.25
-DIVIDEND_YIELD_WEIGHT = 0.2
-SOCIAL_SENTIMENT_WEIGHT = 0.00
-NEWS_SENTIMENT_WEIGHT = 0.05
+short_term_investment_profile = {
+    "MOMENTUM_WEIGHT": 0.5,
+    "GROWTH_WEIGHT": 0.05,
+    "QUALITY_WEIGHT": 0.05,
+    "ANALYST_RATINGS_WEIGHT": 0.2,
+    "DIVIDEND_YIELD_WEIGHT": 0.0,
+    "SOCIAL_SENTIMENT_WEIGHT": 0.0,
+    "NEWS_SENTIMENT_WEIGHT": 0.2,
+}
 
+long_term_investment_profile = {
+    "MOMENTUM_WEIGHT": 0.0,
+    "GROWTH_WEIGHT": 0.03,
+    "QUALITY_WEIGHT": 0.03,
+    "ANALYST_RATINGS_WEIGHT": 0.3,
+    "DIVIDEND_YIELD_WEIGHT": 0.2,
+    "SOCIAL_SENTIMENT_WEIGHT": 0.0,
+    "NEWS_SENTIMENT_WEIGHT": 0.0,
+}
 
+dividend_investment_profile = {
+    "MOMENTUM_WEIGHT": 0.1,
+    "GROWTH_WEIGHT": 0.01,
+    "QUALITY_WEIGHT": 0.01,
+    "ANALYST_RATINGS_WEIGHT": 0.2,
+    "DIVIDEND_YIELD_WEIGHT": 0.5,
+    "SOCIAL_SENTIMENT_WEIGHT": 0.0,
+    "NEWS_SENTIMENT_WEIGHT": 0.0,
+}
+
+# Set investment profile
+PROFILE = short_term_investment_profile
+PROFILE_NAME = "short_term_profile"
