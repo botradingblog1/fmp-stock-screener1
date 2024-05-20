@@ -67,6 +67,16 @@ dividend_investment_profile = {
     "NEWS_SENTIMENT_WEIGHT": 0.0,
 }
 
+analyst_ratings_investment_profile = {
+    "MOMENTUM_WEIGHT": 0.1,
+    "GROWTH_WEIGHT": 0.01,
+    "QUALITY_WEIGHT": 0.01,
+    "ANALYST_RATINGS_WEIGHT": 0.5,
+    "DIVIDEND_YIELD_WEIGHT": 0.0,
+    "SOCIAL_SENTIMENT_WEIGHT": 0.0,
+    "NEWS_SENTIMENT_WEIGHT": 0.2,
+}
+
 # Set investment profile
 PROFILE = short_term_investment_profile
 PROFILE_NAME = "short_term_profile"
