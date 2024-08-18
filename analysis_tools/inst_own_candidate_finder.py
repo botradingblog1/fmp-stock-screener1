@@ -4,7 +4,7 @@ from screeners.momentum_screener1 import MomentumScreener1
 from screeners.growth_screener1 import GrowthScreener1
 from screeners.undervalued_screener1 import UndervaluedScreener1
 from data_loaders.fmp_inst_own_data_loader import FmpInstOwnDataLoader
-from data_loaders.fmp_growth_loader import FmpGrowthLoader
+from data_loaders.fmp_growth_loader1 import FmpGrowthLoader1
 from utils.df_utils import *
 from utils.log_utils import *
 from utils.file_utils import *
@@ -23,7 +23,7 @@ class InstOwnCandidateFinder:
     def __init__(self, fmp_api_key: str):
         self.stock_list_loader = FmpStockListLoader(fmp_api_key)
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
-        self.growth_loader = FmpGrowthLoader(fmp_api_key)
+        self.growth_loader = FmpGrowthLoader1(fmp_api_key)
         self.fmp_inst_own_loader = FmpInstOwnDataLoader(fmp_api_key)
         self.momentum_screener = MomentumScreener1()
         self.undervalued_screener = UndervaluedScreener1()
@@ -44,7 +44,6 @@ class InstOwnCandidateFinder:
             stock_list_limit=STOCK_LIST_LIMIT
         )
         symbol_list = stock_list_df['symbol'].unique()
-        #symbol_list = symbol_list[0:10]
 
         # Fetch price history
         start_date = datetime.today() - timedelta(days=DAILY_DATA_FETCH_PERIODS)
@@ -68,12 +67,12 @@ class InstOwnCandidateFinder:
         symbol_list = momentum_df['symbol'].unique()
         
         # Undervalued screener
-        undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict)
-        logi(f"Undervalued screener returned {len(undervalued_df)} items.")
-        symbol_list = undervalued_df['symbol'].unique()
+        #undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict)
+        #logi(f"Undervalued screener returned {len(undervalued_df)} items.")
+        #symbol_list = undervalued_df['symbol'].unique()
 
         # Get institutional ownership
-        inst_own_results_df = self.inst_own_loader.run(symbol_list)
+        inst_own_results_df = self.fmp_inst_own_loader.run(symbol_list)
 
         # Merge dataframes
         merged_df = pd.merge(momentum_df, inst_own_results_df, on='symbol', how='inner')
@@ -97,10 +96,13 @@ class InstOwnCandidateFinder:
                         'investors_holding_change',
                         'last_quarter_revenue_growth',
                         'last_quarter_earnings_growth']
-        merged_norm_df = normalize_columns(merged_df.copy(), column_list)
+        #merged_norm_df = normalize_columns(merged_df.copy(), column_list)
+
+        # Sort by total institutional ownership invested
+        merged_df.sort_values(by="total_invested_change", ascending=False, inplace=True)
 
         # Calculate weighted score
-        merged_df['weighted_score'] = merged_norm_df[column_list].mul(INST_OWN_SCORE_WEIGHTS).sum(axis=1)
+        #merged_df['weighted_score'] = merged_norm_df[column_list].mul(INST_OWN_SCORE_WEIGHTS).sum(axis=1)
 
         # Store results
         os.makedirs(INST_OWN_CANDIDATES_DIR, exist_ok=True)
