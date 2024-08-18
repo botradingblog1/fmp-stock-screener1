@@ -1,130 +1,29 @@
 from utils.file_utils import *
-from loaders.FmpStockListLoader import FmpStockListLoader
-from loaders.FmpAnalystRatingsLoader import FmpAnalystRatingsLoader
-from loaders.FmpStockNewsLoader import FmpStockNewsLoader
-from loaders.FmpSocialSentimentLoader import FmpSocialSentimentLoader
-from loaders.FmpDividendLoader import FmpDividendLoader
-from loaders.FmpPriceLoader import FmpPriceLoader
-from loaders.FmpMomentumLoader import FmpMomentumLoader
-from loaders.FmpGrowthLoader import FmpGrowthLoader
-from loaders.FmpQualityLoader import FmpQualityLoader
-from utils.df_utils import *
 from utils.file_utils import get_os_variable
 from utils.log_utils import *
+from analysis_tools.ultimate_candidate_finder import UltimateCandidateFinder
+from analysis_tools.highest_returns_candidate_finder import HighestReturnsFinder
+from analysis_tools.inst_own_candidate_finder import InstOwnCandidateFinder
 import schedule
-
-
-# Advanced stock screener considering factors, dividend yield and analyst ratings
 
 
 # Get API key from environment variables
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 
 
-def calculate_ultimate_score(df, profile):
-    df['ultimate_score'] = df['momentum_factor'] * profile['MOMENTUM_WEIGHT'] + \
-                     df['growth_factor'] * profile['GROWTH_WEIGHT'] + \
-                     df['quality_factor'] * profile['QUALITY_WEIGHT'] + \
-                     df['analyst_rating_score'] * profile['ANALYST_RATINGS_WEIGHT'] + \
-                     df['avg_dividend_yield'] * profile['DIVIDEND_YIELD_WEIGHT'] + \
-                     df['news_sentiment_score'] * profile['NEWS_SENTIMENT_WEIGHT'] + \
-                     df['social_sentiment_score'] * profile['SOCIAL_SENTIMENT_WEIGHT']
-
-    # Sort results by score
-    df.sort_values(by=['ultimate_score'], ascending=[False], inplace=True)
-    return df
+def run_inst_own_candidate_finder():
+    finder = InstOwnCandidateFinder(FMP_API_KEY)
+    finder.find_candidates()
 
 
-def run():
-    # Load stock list
-    stock_list_loader = FmpStockListLoader(FMP_API_KEY)
-    stock_list_df = stock_list_loader.fetch_list(
-        exchange_list=EXCHANGE_LIST,
-        min_market_cap=MIN_MARKET_CAP,
-        min_price=MIN_PRICE,
-        max_beta=MAX_BETA,
-        min_volume=MIN_VOLUME,
-        country=COUNTRY,
-        stock_list_limit=STOCK_LIST_LIMIT
-    )
-    symbol_list = stock_list_df['symbol'].unique()
+def run_ultimate_finder():
+    finder = UltimateCandidateFinder(FMP_API_KEY)
+    finder.find_candidates()
 
-    # Load price info
-    price_loader = FmpPriceLoader(FMP_API_KEY)
-    prices_dict = price_loader.fetch(symbol_list)
 
-    # Get all symbols that have prices
-    symbol_list = list(prices_dict.keys())
-
-    # Load Quality factor
-    quality_loader = FmpQualityLoader(FMP_API_KEY)
-    quality_df = quality_loader.fetch(symbol_list)
-
-    # Filter out stocks based on min score
-    quality_df = quality_df[quality_df['quality_factor'] >= MIN_QUALITY_FACTOR]
-    symbol_list = quality_df['symbol'].unique()
-    
-    # Load Growth factor
-    growth_loader = FmpGrowthLoader(FMP_API_KEY)
-    growth_df = growth_loader.fetch(symbol_list)
-
-    # Filter out stocks based on min score
-    growth_df = growth_df[growth_df['growth_factor'] >= MIN_GROWTH_FACTOR]
-    symbol_list = growth_df['symbol'].unique()
-    
-    # Load Momentum factor
-    momentum_loader = FmpMomentumLoader(FMP_API_KEY)
-    momentum_df = momentum_loader.fetch(symbol_list, prices_dict)
-
-    # Filter out stocks based on min score
-    momentum_df = momentum_df[momentum_df['momentum_factor'] >= MIN_MOMENTUM_FACTOR]
-    symbol_list = momentum_df['symbol'].unique()
-
-    # Load analyst ratings
-    analyst_ratings_loader = FmpAnalystRatingsLoader(FMP_API_KEY)
-    analyst_grades_df = analyst_ratings_loader.fetch(symbol_list)
-
-    # Filter out stocks based on min score
-    analyst_grades_df = analyst_grades_df[analyst_grades_df['analyst_rating_score'] >= MIN_ANALYST_RATINGS_SCORE]
-    symbol_list = analyst_grades_df['symbol'].unique()
-
-    # Load dividend info
-    dividend_loader = FmpDividendLoader(FMP_API_KEY)
-    dividend_stats_df = dividend_loader.fetch(symbol_list, prices_dict)
-
-    # Load social sentiment
-    social_sentiment_loader = FmpSocialSentimentLoader(FMP_API_KEY)
-    social_sentiment_stats_df = social_sentiment_loader.fetch(symbol_list)
-
-    # Load stock news
-    stock_news_loader = FmpStockNewsLoader(FMP_API_KEY)
-    stock_news_df = stock_news_loader.fetch(symbol_list, NEWS_ARTICLE_LIMIT)
-
-    # Merge all dataframes by symbol
-    df_list = [quality_df,
-        growth_df,
-        momentum_df,
-        analyst_grades_df,
-        dividend_stats_df,
-        social_sentiment_stats_df,
-        stock_news_df]
-    merged_df = merge_dataframes(symbol_list, df_list)
-
-    # Normalize score values
-    norm_df = normalize_dataframe(merged_df)
-
-    # Calculate B/O score (no, not 'Body Odor' ;)
-    ultimate_score_df = calculate_ultimate_score(norm_df, PROFILE)
-
-    # Round values
-    ultimate_score_df = round_dataframe_columns(ultimate_score_df, precision=ROUND_PRECISION)
-
-    # Store results
-    file_name = f"ultimate_screener_results_{PROFILE_NAME}.csv"
-    path = os.path.join(RESULTS_DIR, file_name)
-    ultimate_score_df.to_csv(path)
-
-    logi('All done')
+def run_highest_return_finder():
+    finder = HighestReturnsFinder(FMP_API_KEY)
+    finder.find_candidates()
 
 
 def perform_cleanup():
@@ -133,16 +32,16 @@ def perform_cleanup():
 
 
 def schedule_events():
+    schedule.every().sunday.at('01:15').do(run_ultimate_finder())
+    schedule.every().sunday.at('01:01').do(run_highest_return_finder())
     schedule.every().sunday.at('01:00').do(perform_cleanup)
-    schedule.every().sunday.at('01:01').do(run)
 
 
 if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
-    # Run this thing!
-    run()
+    run_inst_own_candidate_finder()
 
     """
     #  Schedule events - to run the script at regular intervals

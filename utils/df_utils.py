@@ -4,6 +4,12 @@ from config import *
 from sklearn.preprocessing import MinMaxScaler
 
 
+def normalize_columns(df, columns_to_normalize):
+    scaler = MinMaxScaler()
+    df[columns_to_normalize] = scaler.fit_transform(df[columns_to_normalize])
+    return df
+
+
 def normalize_dataframe(df):
     column_list = df.columns
     scaler = MinMaxScaler(feature_range=(0, 100))

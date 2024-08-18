@@ -8,3 +8,4 @@ transformers
 torch
 scikit-learn
 schedule
+botrading==1.0.0
