@@ -13,11 +13,11 @@ from datetime import datetime, timedelta
 
 
 # Configuration
-BLUE_CHIP_VALUE_CANDIDATES_DIR = "C:\\dev\\trading\\data\\blue_chip_value\\candidates"
-BLUE_CHIP_VALUE_CANDIDATES_FILE_NAME = "blue_chip_value_candidates.csv"
+BLUE_CHIP_BARGAIN_CANDIDATES_DIR = "C:\\dev\\trading\\data\\blue_chip_value\\candidates"
+BLUE_CHIP_BARGAIN_CANDIDATES_FILE_NAME = "blue_chip_BARGAIN_candidates.csv"
 
 
-class BlueChipValueCandidateFinder:
+class BlueChipBargainCandidateFinder:
     def __init__(self, fmp_api_key: str):
         self.market_symbol_loader = MarketSymbolLoader()
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
@@ -30,7 +30,7 @@ class BlueChipValueCandidateFinder:
     def find_candidates(self):
         logi("Finding undervalued blue chips")
         # Clean up previous candidates file
-        delete_file(BLUE_CHIP_VALUE_CANDIDATES_DIR, BLUE_CHIP_VALUE_CANDIDATES_FILE_NAME)
+        delete_file(BLUE_CHIP_BARGAIN_CANDIDATES_DIR, BLUE_CHIP_BARGAIN_CANDIDATES_FILE_NAME)
 
         # Load Blue Chip stocks
         snp_500_symbols_df = self.market_symbol_loader.fetch_sp500_symbols(cache_file=True)
@@ -79,8 +79,8 @@ class BlueChipValueCandidateFinder:
         merged_df.sort_values(by="price_drop_percent", ascending=False, inplace=True)
 
         # Store results
-        os.makedirs(BLUE_CHIP_VALUE_CANDIDATES_DIR, exist_ok=True)
-        path = os.path.join(BLUE_CHIP_VALUE_CANDIDATES_DIR, BLUE_CHIP_VALUE_CANDIDATES_FILE_NAME)
+        os.makedirs(BLUE_CHIP_BARGAIN_CANDIDATES_DIR, exist_ok=True)
+        path = os.path.join(BLUE_CHIP_BARGAIN_CANDIDATES_DIR, BLUE_CHIP_BARGAIN_CANDIDATES_FILE_NAME)
         merged_df.to_csv(path)
 
-        logi("Done with candidate analysis.")
+        logi(f"Blue chip candidates saved to {path}")

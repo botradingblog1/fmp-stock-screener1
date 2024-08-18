@@ -4,7 +4,8 @@ from utils.log_utils import *
 from analysis_tools.ultimate_candidate_finder import UltimateCandidateFinder
 from analysis_tools.highest_returns_candidate_finder import HighestReturnsFinder
 from analysis_tools.inst_own_candidate_finder import InstOwnCandidateFinder
-from analysis_tools.blue_chip_value_candidate_finder import BlueChipValueCandidateFinder
+from analysis_tools.blue_chip_bargain_candidate_finder import BlueChipBargainCandidateFinder
+from analysis_tools.etf_performance_screener import EtfPerformanceScreener
 import schedule
 
 
@@ -12,8 +13,13 @@ import schedule
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 
 
-def run_blue_chip_value_candidate_finder():
-    finder = BlueChipValueCandidateFinder(FMP_API_KEY)
+def run_etf_performance_screener():
+    screener = EtfPerformanceScreener(FMP_API_KEY)
+    screener.find_candidates()
+
+
+def run_blue_chip_bargain_candidate_finder():
+    finder = BlueChipBargainCandidateFinder(FMP_API_KEY)
     finder.find_candidates()
 
 
@@ -41,7 +47,7 @@ def schedule_events():
     schedule.every().day.at('01:01').do(run_highest_return_finder())
     schedule.every().day.at('01:15').do(run_ultimate_finder())
     schedule.every().day.at('01:30').do(run_inst_own_candidate_finder())
-    schedule.every().day.at('01:45').do(run_blue_chip_value_candidate_finder())
+    schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder())
 
     schedule.every().sunday.at('01:00').do(perform_cleanup)
 
@@ -50,7 +56,7 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
-    run_blue_chip_value_candidate_finder()
+    run_etf_performance_screener()
 
     """
     #  Schedule events - to run the script at regular intervals

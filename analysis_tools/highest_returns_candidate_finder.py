@@ -116,8 +116,9 @@ class HighestReturnsFinder:
 
         # Store for review
         os.makedirs(HIGHEST_RETURN_CANDIDATES_DIR, exist_ok=True)
+        path = os.path.join(HIGHEST_RETURN_CANDIDATES_DIR, HIGHEST_RETURN_CANDIDATES_FILE_NAME)
         store_csv(HIGHEST_RETURN_CANDIDATES_DIR, HIGHEST_RETURN_CANDIDATES_FILE_NAME, metrics_df)
 
-        logi("Done analyzing highest avg monthly returns candidates")
+        logi(f"Highest avg monthly returns candidates saved to {path}")
 
         return metrics_df

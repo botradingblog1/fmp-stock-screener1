@@ -109,4 +109,4 @@ class InstOwnCandidateFinder:
         path = os.path.join(INST_OWN_CANDIDATES_DIR, INST_OWN_CANDIDATES_FILE_NAME)
         merged_df.to_csv(path)
 
-        logi("Done with candidate analysis.")
+        logi(f"Institutional ownership candidates saved to {path}")
