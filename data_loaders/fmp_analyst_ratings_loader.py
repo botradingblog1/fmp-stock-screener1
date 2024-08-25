@@ -5,9 +5,9 @@ from utils.log_utils import *
 from utils.file_utils import *
 import time
 from datetime import datetime
+import os
 
-
-ANALYST_RATINGS_CACHE_DIR = "cache/analyst_ratings"
+ANALYST_RATINGS_CACHE_DIR = os.path.join("cache", "analyst_ratings")
 
 
 # Loads analyst ratings from FMP

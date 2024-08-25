@@ -10,7 +10,7 @@ from utils.file_utils import *
 from datetime import datetime
 
 
-GROWTH_DATA_DIR = "cache/growth_data"
+GROWTH_DATA_DIR = os.path.join("cache", "growth_data")
 
 
 class FmpGrowthLoader1:

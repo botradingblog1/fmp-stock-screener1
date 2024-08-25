@@ -23,7 +23,7 @@ labels = ["positive", "negative", "neutral"]
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-NEWS_CACHE_DIR = "cache/news_articles"
+NEWS_CACHE_DIR = os.path.join("cache", "news_articles")
 
 
 # Loads stock news from FMP

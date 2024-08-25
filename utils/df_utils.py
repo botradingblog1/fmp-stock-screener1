@@ -4,7 +4,7 @@ from config import *
 from sklearn.preprocessing import MinMaxScaler
 
 
-def normalize_series(self, series):
+def normalize_series(series):
     """Normalize a pandas series to a 0-1 range."""
     return (series - series.min()) / (series.max() - series.min())
 

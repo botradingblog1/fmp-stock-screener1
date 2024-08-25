@@ -48,10 +48,6 @@ class DeepDiscountGrowthCandidateFinder:
         self.earnings_estimate_screener = EarningsEstimateScreener1()
         self.growth_screener = GrowthScreener1()
 
-    def normalize_series(self, series):
-        """Normalize a pandas series to a 0-1 range."""
-        return (series - series.min()) / (series.max() - series.min())
-
     def find_candidates(self):
         logi("Finding undervalued blue chips")
         # Clean up previous candidates file
@@ -124,7 +120,7 @@ class DeepDiscountGrowthCandidateFinder:
         # Normalize the different metrics before calculating the score
         for column in ['price_drop_percent', 'avg_eps_growth_percent', 'last_quarter_revenue_growth',
                        'last_quarter_earnings_growth', 'analyst_rating_score', 'news_sentiment_score']:
-            merged_df[f'norm_{column}'] = self.normalize_series(merged_df[column])
+            merged_df[f'norm_{column}'] = normalize_series(merged_df[column])
 
         # Calculate weighted score
         merged_df['weighted_score'] = (
