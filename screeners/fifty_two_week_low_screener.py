@@ -1,18 +1,16 @@
 import pandas as pd
 from utils.log_utils import *
 from datetime import datetime, timedelta
+from screeners.growth_screener1 import GrowthScreener1
 
 
 """
  Calculated 52-week high and filters by minimum drop
 """
 
-# Configuration
-MIN_PRICE_DROP_PERCENT = 0.2  # percent
 
-
-class UndervaluedScreener2:
-    def run(self, symbol_list, prices_dict):
+class FiftyTwoWeekLowScreener:
+    def run(self, symbol_list, prices_dict, min_price_drop_percent=MIN_PRICE_DROP_PERCENT):
         logi(f"Finding undervalued stocks....")
         undervalued_data = []
 
@@ -50,11 +48,12 @@ class UndervaluedScreener2:
             price_drop_percent = ((fifty_two_week_high - most_recent_close) / fifty_two_week_high)
 
             # Filter by minimum price drop percentage
-            if price_drop_percent >= MIN_PRICE_DROP_PERCENT:
+            if price_drop_percent >= min_price_drop_percent:
                 undervalued_data.append({
                     'symbol': symbol,
                     'price_drop_percent': price_drop_percent,
-                    'fifty_two_week_high': fifty_two_week_high
+                    'fifty_two_week_high': fifty_two_week_high,
+                    'current_close': most_recent_close
                 })
 
         # Convert the list of dictionaries to a DataFrame

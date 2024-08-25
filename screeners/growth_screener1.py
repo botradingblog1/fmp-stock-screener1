@@ -51,7 +51,7 @@ class GrowthScreener1:
         # Filter out low growth records
         growth_df = growth_df[growth_df['last_quarter_revenue_growth'] >= min_quarterly_revenue_growth]
         growth_df = growth_df[growth_df['last_quarter_earnings_growth'] >= min_quarterly_earnings_growth]
-        growth_df = growth_df[growth_df['earnings_acceleration'] == True]
-        growth_df = growth_df[growth_df['revenue_acceleration'] == True]
+        #growth_df = growth_df[growth_df['earnings_acceleration'] == True]
+        #growth_df = growth_df[growth_df['revenue_acceleration'] == True]
 
         return growth_df

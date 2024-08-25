@@ -3,7 +3,7 @@ from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 from botrading.data_loaders.market_symbol_loader import MarketSymbolLoader
 from screeners.momentum_screener1 import MomentumScreener1
 from screeners.growth_screener1 import GrowthScreener1
-from screeners.undervalued_screener2 import UndervaluedScreener2
+from screeners.fifty_two_week_low_screener import FiftyTwoWeekLowScreener
 from data_loaders.fmp_analyst_ratings_loader import FmpAnalystRatingsLoader
 from data_loaders.fmp_growth_loader1 import FmpGrowthLoader1
 from utils.df_utils import *
@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 # Configuration
 BLUE_CHIP_BARGAIN_CANDIDATES_DIR = "C:\\dev\\trading\\data\\blue_chip_value\\candidates"
-BLUE_CHIP_BARGAIN_CANDIDATES_FILE_NAME = "blue_chip_BARGAIN_candidates.csv"
+BLUE_CHIP_BARGAIN_CANDIDATES_FILE_NAME = "blue_chip_bargain_candidates.csv"
 
 
 class BlueChipBargainCandidateFinder:
@@ -24,7 +24,7 @@ class BlueChipBargainCandidateFinder:
         self.growth_loader = FmpGrowthLoader1(fmp_api_key)
         self.fmp_analyst_ratings_loader = FmpAnalystRatingsLoader(fmp_api_key)
         self.momentum_screener = MomentumScreener1()
-        self.undervalued_screener = UndervaluedScreener2()
+        self.fifty_two_week_low_screener = FiftyTwoWeekLowScreener()
         self.growth_screener = GrowthScreener1()
 
     def find_candidates(self):
@@ -51,7 +51,7 @@ class BlueChipBargainCandidateFinder:
         symbol_list = list(prices_dict.keys())
 
         # Undervalued screener
-        undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict)
+        undervalued_df = self.fifty_two_week_low_screener.run(symbol_list, prices_dict)
         logi(f"Undervalued screener returned {len(undervalued_df)} items.")
         symbol_list = undervalued_df['symbol'].unique()
 

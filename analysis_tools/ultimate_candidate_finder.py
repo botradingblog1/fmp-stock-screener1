@@ -109,4 +109,3 @@ class UltimateCandidateFinder:
         ultimate_score_df.to_csv(path)
 
         logi(f"Ultimate screener candidates saved to {path}")
-        

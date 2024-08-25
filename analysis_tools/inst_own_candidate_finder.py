@@ -2,13 +2,14 @@ from data_loaders.fmp_stock_list_loader import FmpStockListLoader
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 from screeners.momentum_screener1 import MomentumScreener1
 from screeners.growth_screener1 import GrowthScreener1
-from screeners.undervalued_screener1 import UndervaluedScreener1
+from screeners.fifty_two_week_low_screener import FiftyTwoWeekLowScreener
 from data_loaders.fmp_inst_own_data_loader import FmpInstOwnDataLoader
 from data_loaders.fmp_growth_loader1 import FmpGrowthLoader1
 from utils.df_utils import *
 from utils.log_utils import *
 from utils.file_utils import *
 from datetime import datetime, timedelta
+from config import *
 
 
 # Configuration
@@ -26,7 +27,7 @@ class InstOwnCandidateFinder:
         self.growth_loader = FmpGrowthLoader1(fmp_api_key)
         self.fmp_inst_own_loader = FmpInstOwnDataLoader(fmp_api_key)
         self.momentum_screener = MomentumScreener1()
-        self.undervalued_screener = UndervaluedScreener1()
+        self.undervalued_screener = UndervaluedScreener2()
         self.growth_screener = GrowthScreener1()
 
     def find_candidates(self):
@@ -56,6 +57,7 @@ class InstOwnCandidateFinder:
         # Get all symbols that have prices
         symbol_list = list(prices_dict.keys())
 
+        """ NOTE: Instead of biggest winners, it may be better to find undervalued stocks 
         # Momentum screener
         momentum_df = self.momentum_screener.run(symbol_list, prices_dict)
 
@@ -65,6 +67,11 @@ class InstOwnCandidateFinder:
 
         logi(f"Momentum screener returned {len(momentum_df)} items.")
         symbol_list = momentum_df['symbol'].unique()
+        """
+        # Undervalued screener
+        undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict, MIN_PRICE_DROP_PERCENT)
+        logi(f"Undervalued screener returned {len(undervalued_df)} items.")
+        symbol_list = undervalued_df['symbol'].unique()
         
         # Undervalued screener
         #undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict)
@@ -75,7 +82,7 @@ class InstOwnCandidateFinder:
         inst_own_results_df = self.fmp_inst_own_loader.run(symbol_list)
 
         # Merge dataframes
-        merged_df = pd.merge(momentum_df, inst_own_results_df, on='symbol', how='inner')
+        merged_df = pd.merge(undervalued_df, inst_own_results_df, on='symbol', how='inner')
 
         # Load growth data
         growth_data_dict = self.growth_loader.fetch(symbol_list)
@@ -90,6 +97,7 @@ class InstOwnCandidateFinder:
         # Merge growth
         merged_df = pd.merge(merged_df, growth_df, on='symbol', how='inner')
 
+        """
         # Normalize columns
         column_list = ['momentum_change',
                         'total_invested_change',
@@ -97,6 +105,7 @@ class InstOwnCandidateFinder:
                         'last_quarter_revenue_growth',
                         'last_quarter_earnings_growth']
         #merged_norm_df = normalize_columns(merged_df.copy(), column_list)
+        """
 
         # Sort by total institutional ownership invested
         merged_df.sort_values(by="total_invested_change", ascending=False, inplace=True)

@@ -81,3 +81,5 @@ analyst_ratings_investment_profile = {
 # Set investment profile
 PROFILE = short_term_investment_profile
 PROFILE_NAME = "short_term_profile"
+
+MIN_PRICE_DROP_PERCENT = 0.2  # percent
