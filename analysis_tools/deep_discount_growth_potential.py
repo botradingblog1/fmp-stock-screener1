@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 DEEP_DISCOUNT_GROWTH_CANDIDATES_DIR = "C:\\dev\\trading\\data\\deep_discount_growth\\candidates"
 DEEP_DISCOUNT_GROWTH_CANDIDATES_FILE_NAME = "deep_discount_growth_candidates.csv"
 
-MIN_PRICE_DROP_PERCENT = 0.5
+MIN_PRICE_DROP_PERCENT = 0.4
 MIN_CURRENT_QUARTERLY_REVENUE_GROWTH = 0.1
 MIN_CURRENT_QUARTERLY_EARNINGS_GROWTH = 0.1
 MIN_AVG_EARNINGS_ESTIMATE_PERCENT = 0.1
@@ -33,7 +33,7 @@ WEIGHTS = {
     'avg_eps_growth_percent': 0.3,
     'last_quarter_revenue_growth': 0.1,
     'last_quarter_earnings_growth': 0.1,
-    'analyst_ratings_score': 0.2
+    'analyst_rating_score': 0.2
 }
 
 
@@ -100,8 +100,7 @@ class DeepDiscountGrowthCandidateFinder:
         # Fetch future earnings estimates
         earnings_estimate_data_dict = self.fmp_data_loader.fetch_multiple_analyst_earnings_estimates(symbol_list,
                                                                                                      period="quarter",
-                                                                                                     cache_data=True,
-                                                                                                     cache_dir=CACHE_DIR)
+                                                                                                     limit=100)
 
         # Screener for earnings estimates
         earnings_estimates_df = self.earnings_estimate_screener.run(earnings_estimate_data_dict,
@@ -131,8 +130,12 @@ class DeepDiscountGrowthCandidateFinder:
             WEIGHTS['avg_eps_growth_percent'] * merged_df['norm_avg_eps_growth_percent'] +
             WEIGHTS['last_quarter_revenue_growth'] * merged_df['norm_last_quarter_revenue_growth'] +
             WEIGHTS['last_quarter_earnings_growth'] * merged_df['norm_last_quarter_earnings_growth'] +
-            WEIGHTS['analyst_rating_score'] * merged_df['norm_analyst_rating_score']
+            WEIGHTS['analyst_rating_score'] * merged_df['norm_analyst_rating_score'] * 100
         )
+
+        # Drop all columns that start with 'norm_'
+        columns_to_drop = [col for col in merged_df.columns if col.startswith('norm_')]
+        merged_df.drop(columns=columns_to_drop, inplace=True)
 
         # Sort by weighted score in descending order
         merged_df = merged_df.sort_values(by='weighted_score', ascending=False)
@@ -142,4 +145,4 @@ class DeepDiscountGrowthCandidateFinder:
         path = os.path.join(DEEP_DISCOUNT_GROWTH_CANDIDATES_DIR, DEEP_DISCOUNT_GROWTH_CANDIDATES_FILE_NAME)
         merged_df.to_csv(path, index=False)
 
-        logi(f"Blue chip candidates saved to {path}")
+        logi(f"Deep discount growth candidates saved to {path}")

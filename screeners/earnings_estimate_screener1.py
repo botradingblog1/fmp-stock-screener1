@@ -16,16 +16,16 @@ class EarningsEstimateScreener1:
         current_date = pd.to_datetime(datetime.now().date())
 
         for symbol, earnings_estimate_df in earnings_estimates_dict.items():
+            earnings_estimate_df['date'] = pd.to_datetime(earnings_estimate_df['date'])
             # Ensure necessary columns are available and format date columns
             earnings_estimate_df = earnings_estimate_df[
-                ['target_date', 'estimatedEpsAvg', 'estimatedEpsHigh', 'estimatedEpsLow', 'numberAnalystsEstimatedEps']]
-            earnings_estimate_df['target_date'] = pd.to_datetime(earnings_estimate_df['target_date'])
+                ['date', 'estimatedEpsAvg', 'estimatedEpsHigh', 'estimatedEpsLow', 'numberAnalystsEstimatedEps']]
 
             # Filter out dates that are in the past
-            earnings_estimate_df = earnings_estimate_df[earnings_estimate_df['target_date'] >= current_date]
+            earnings_estimate_df = earnings_estimate_df[earnings_estimate_df['date'] >= current_date]
 
-            # Sort by target_date to ensure future dates are in order
-            earnings_estimate_df = earnings_estimate_df.sort_values(by='target_date')
+            # Sort by date to ensure future dates are in order
+            earnings_estimate_df = earnings_estimate_df.sort_values(by='date')
 
             # Ensure that we have enough periods to consider
             if len(earnings_estimate_df) < num_period:

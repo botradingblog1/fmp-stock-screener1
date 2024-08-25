@@ -54,7 +54,8 @@ def schedule_events():
     schedule.every().day.at('01:01').do(run_highest_return_finder)
     schedule.every().day.at('01:15').do(run_ultimate_finder)
     schedule.every().day.at('01:30').do(run_inst_own_candidate_finder)
-    #schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder)
+    schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder)
+    schedule.every().day.at('01:45').do(run_deep_discount_growth_screener)
 
     schedule.every().sunday.at('01:00').do(perform_cleanup)
 
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
-    run_deep_discount_growth_screener()
+    #run_deep_discount_growth_screener()
     #run_inst_own_candidate_finder()
 
 
