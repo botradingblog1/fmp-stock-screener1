@@ -1,7 +1,16 @@
 import pandas as pd
 from config import *
-from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 from data_loaders.fmp_stock_list_loader import FmpStockListLoader
+from botrading.data_loaders.fmp_data_loader import FmpDataLoader
+from botrading.data_loaders.market_symbol_loader import MarketSymbolLoader
+from screeners.momentum_screener1 import MomentumScreener1
+from screeners.growth_screener1 import GrowthScreener1
+from screeners.earnings_estimate_screener1 import EarningsEstimateScreener1
+from screeners.fifty_two_week_low_screener import FiftyTwoWeekLowScreener
+from data_loaders.fmp_analyst_ratings_loader import FmpAnalystRatingsLoader
+from data_loaders.fmp_growth_loader1 import FmpGrowthLoader1
+from data_loaders.fmp_stock_news_loader import FmpStockNewsLoader
+from utils.df_utils import *
 from utils.log_utils import *
 from utils.file_utils import *
 from datetime import datetime, timedelta
@@ -19,13 +28,33 @@ RETURN_LOOKBACK_PERIOD = 180  # Based on https://www.bauer.uh.edu/rsusmel/phd/je
 MIN_AVG_MONTHLY_RETURN = 0.01  # Minimum average monthly return
 MIN_LOWEST_MONTHLY_RETURN = -0.2  # Minimum lowest monthly return
 MAX_MONTHLY_COV_RETURN = 3.0  # Maximum Coefficient of Variation for monthly returns
+MIN_CURRENT_QUARTERLY_REVENUE_GROWTH = 0.01
+MIN_CURRENT_QUARTERLY_EARNINGS_GROWTH = 0.01
+MIN_AVG_EARNINGS_ESTIMATE_PERCENT = 0.04
+MIN_NUM_EARNINGS_ANALYSTS = 3
 
+# Weight configuration for each component
+WEIGHTS = {
+    'avg_monthly_return': 0.3,
+    'avg_eps_growth_percent': 0.2,
+    'last_quarter_revenue_growth': 0.1,
+    'last_quarter_earnings_growth': 0.1,
+    'analyst_rating_score': 0.2,
+    'news_sentiment_score': 0.1
+}
 
 class HighestReturnsFinder:
     # Finds the highest monthly returns in a set of stocks
     def __init__(self, fmp_api_key: str):
         self.stock_list_loader = FmpStockListLoader(fmp_api_key)
-        self.dat_loader = FmpDataLoader(fmp_api_key)
+        self.fmp_stock_news_loader = FmpStockNewsLoader(fmp_api_key)
+        self.fmp_data_loader = FmpDataLoader(fmp_api_key)
+        self.growth_loader = FmpGrowthLoader1(fmp_api_key)
+        self.fmp_analyst_ratings_loader = FmpAnalystRatingsLoader(fmp_api_key)
+        self.momentum_screener = MomentumScreener1()
+        self.fifty_two_week_low_screener = FiftyTwoWeekLowScreener()
+        self.earnings_estimate_screener = EarningsEstimateScreener1()
+        self.growth_screener = GrowthScreener1()
 
     def calculate_metrics(self, symbol, prices_df):
         # Resample prices to monthly frequency and calculate monthly returns
@@ -88,7 +117,7 @@ class HighestReturnsFinder:
         end_date = datetime.today()
         end_date_str = end_date.strftime("%Y-%m-%d")
 
-        prices_dict = self.dat_loader.fetch_multiple_daily_prices_by_date(symbol_list, start_date_str, end_date_str,
+        prices_dict = self.fmp_data_loader.fetch_multiple_daily_prices_by_date(symbol_list, start_date_str, end_date_str,
                                                                         cache_data=True, cache_dir=CACHE_DIR)
 
         i = 1
@@ -114,10 +143,76 @@ class HighestReturnsFinder:
         # Sort by highest average monthly returns
         metrics_df.sort_values(by=["highest_avg_return_score"], ascending=[False], inplace=True)
 
+        # Keep the top 100
+        metrics_df = metrics_df.head(100)
+        symbol_list = metrics_df['symbol'].unique()
+
+        # Load growth data
+        growth_data_dict = self.growth_loader.fetch(symbol_list)
+
+        # Check min earnings/revenue growth and growth acceleration
+        growth_df = self.growth_screener.run(growth_data_dict,
+                                             MIN_CURRENT_QUARTERLY_EARNINGS_GROWTH,
+                                             MIN_CURRENT_QUARTERLY_REVENUE_GROWTH)
+        if growth_df is None or len(growth_df) == 0:
+            logi("Growth screener returned no results")
+            return
+        logi(f"Growth screener returned {len(growth_df)} items.")
+
+        # Merge growth
+        merged_df = pd.merge(metrics_df, growth_df, on='symbol', how='inner')
+        symbol_list = merged_df['symbol'].unique()
+
+        # Fetch future earnings estimates
+        earnings_estimate_data_dict = self.fmp_data_loader.fetch_multiple_analyst_earnings_estimates(symbol_list,
+                                                                                                     period="quarter",
+                                                                                                     limit=100)
+
+        # Screener for earnings estimates
+        earnings_estimates_df = self.earnings_estimate_screener.run(earnings_estimate_data_dict,
+                                                                    MIN_AVG_EARNINGS_ESTIMATE_PERCENT,
+                                                                    MIN_NUM_EARNINGS_ANALYSTS)
+        merged_df = pd.merge(merged_df, earnings_estimates_df, on='symbol', how='inner')
+        symbol_list = merged_df['symbol'].unique()
+
+        # Get analyst ratings
+        analyst_ratings_df = self.fmp_analyst_ratings_loader.fetch(symbol_list)
+        merged_df = pd.merge(merged_df, analyst_ratings_df, on='symbol', how='inner')
+
+        # Determine news sentiment
+        news_sentiment_df = self.fmp_stock_news_loader.fetch(symbol_list, news_article_limit=30)
+        merged_df = pd.merge(merged_df, news_sentiment_df, on='symbol', how='inner')
+
+        if merged_df.empty:
+            logi(f"Candidates file is empty")
+            return
+
+        # Normalize the different metrics before calculating the score
+        for column in ['avg_monthly_return', 'avg_eps_growth_percent', 'last_quarter_revenue_growth',
+                       'last_quarter_earnings_growth', 'analyst_rating_score', 'news_sentiment_score']:
+            merged_df[f'norm_{column}'] = normalize_series(merged_df[column])
+
+        # Calculate weighted score
+        merged_df['weighted_score'] = (
+            WEIGHTS['avg_monthly_return'] * merged_df['norm_avg_monthly_return'] +
+            WEIGHTS['avg_eps_growth_percent'] * merged_df['norm_avg_eps_growth_percent'] +
+            WEIGHTS['last_quarter_revenue_growth'] * merged_df['norm_last_quarter_revenue_growth'] +
+            WEIGHTS['last_quarter_earnings_growth'] * merged_df['norm_last_quarter_earnings_growth'] +
+            WEIGHTS['analyst_rating_score'] * merged_df['norm_analyst_rating_score'] +
+            WEIGHTS['news_sentiment_score'] * merged_df['news_sentiment_score'] * 100
+        )
+
+        # Drop all columns that start with 'norm_'
+        columns_to_drop = [col for col in merged_df.columns if col.startswith('norm_')]
+        merged_df.drop(columns=columns_to_drop, inplace=True)
+
+        # Sort by weighted score in descending order
+        merged_df = merged_df.sort_values(by='weighted_score', ascending=False)
+
         # Store for review
         os.makedirs(HIGHEST_RETURN_CANDIDATES_DIR, exist_ok=True)
         path = os.path.join(HIGHEST_RETURN_CANDIDATES_DIR, HIGHEST_RETURN_CANDIDATES_FILE_NAME)
-        store_csv(HIGHEST_RETURN_CANDIDATES_DIR, HIGHEST_RETURN_CANDIDATES_FILE_NAME, metrics_df)
+        store_csv(HIGHEST_RETURN_CANDIDATES_DIR, HIGHEST_RETURN_CANDIDATES_FILE_NAME, merged_df)
 
         logi(f"Highest avg monthly returns candidates saved to {path}")
 

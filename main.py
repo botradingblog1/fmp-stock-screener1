@@ -64,9 +64,7 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
-    #run_deep_discount_growth_screener()
-    #run_inst_own_candidate_finder()
-
+    run_highest_return_finder()
 
     #  Schedule events - to run the script at regular intervals
     schedule_events()

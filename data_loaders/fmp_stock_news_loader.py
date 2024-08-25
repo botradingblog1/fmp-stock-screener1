@@ -23,6 +23,8 @@ labels = ["positive", "negative", "neutral"]
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+NEWS_CACHE_DIR = "cache/news_articles"
+
 
 # Loads stock news from FMP
 class FmpStockNewsLoader:
@@ -126,8 +128,16 @@ class FmpStockNewsLoader:
         for symbol in symbol_list:
             logd(f"Loading stock news for {symbol}... ({i}/{len(symbol_list)})")
 
-            # Fetch news
-            news_df = self.fmp_client.get_stock_news(symbol, news_article_limit)
+            today_str = datetime.today().strftime("%Y-%m-%d")
+            file_name = f"{symbol}_{today_str}_news_articles.csv"
+            path = os.path.join(NEWS_CACHE_DIR, file_name)
+            if os.path.exists(path):
+                # Load from cache
+                news_df = pd.read_csv(path)
+            else:
+                # Fetch news remotely
+                news_df = self.fmp_client.get_stock_news(symbol, news_article_limit)
+                store_csv(NEWS_CACHE_DIR, file_name, news_df)
             if news_df is None or len(news_df) == 0:
                 logw(f"No news for {symbol}")
                 continue
@@ -149,7 +159,6 @@ class FmpStockNewsLoader:
 
                 # Detect news sentiment
                 news_df['news_sentiment'] = news_df.apply(self.detect_news_sentiment, axis=1)
-                store_csv(CACHE_DIR, f"{symbol}_news.csv", news_df)
 
                 # Calculate score
                 news_sentiment_score = self.calculate_news_sentiment_score(news_df)
@@ -158,8 +167,6 @@ class FmpStockNewsLoader:
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
             i += 1
-            # Throttle for API limit
-            time.sleep(API_REQUEST_DELAY)
 
         # Cap values
         results_df = cap_outliers(results_df, 'news_sentiment_score')

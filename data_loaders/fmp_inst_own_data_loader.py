@@ -6,6 +6,9 @@ from utils.log_utils import *
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 
 
+INST_OWN_CACHE_DIR = "cache/inst_own_data"
+
+
 class FmpInstOwnDataLoader:
     """
     Loads institutional ownership data

@@ -30,12 +30,12 @@ MIN_NUM_EARNINGS_ANALYSTS = 3
 # Weight configuration for each component
 WEIGHTS = {
     'price_drop_percent': 0.3,
-    'avg_eps_growth_percent': 0.3,
+    'avg_eps_growth_percent': 0.2,
     'last_quarter_revenue_growth': 0.1,
     'last_quarter_earnings_growth': 0.1,
-    'analyst_rating_score': 0.2
+    'analyst_rating_score': 0.2,
+    'news_sentiment_score': 0.1
 }
-
 
 class DeepDiscountGrowthCandidateFinder:
     def __init__(self, fmp_api_key: str):
@@ -111,9 +111,11 @@ class DeepDiscountGrowthCandidateFinder:
 
         # Get analyst ratings
         analyst_ratings_df = self.fmp_analyst_ratings_loader.fetch(symbol_list)
-
-        # Merge dataframes
         merged_df = pd.merge(merged_df, analyst_ratings_df, on='symbol', how='inner')
+
+        # Determine news sentiment
+        news_sentiment_df = self.fmp_stock_news_loader.fetch(symbol_list, news_article_limit=30)
+        merged_df = pd.merge(merged_df, news_sentiment_df, on='symbol', how='inner')
 
         if merged_df.empty:
             logi(f"Candidates file is empty")
@@ -121,7 +123,7 @@ class DeepDiscountGrowthCandidateFinder:
 
         # Normalize the different metrics before calculating the score
         for column in ['price_drop_percent', 'avg_eps_growth_percent', 'last_quarter_revenue_growth',
-                       'last_quarter_earnings_growth', 'analyst_rating_score']:
+                       'last_quarter_earnings_growth', 'analyst_rating_score', 'news_sentiment_score']:
             merged_df[f'norm_{column}'] = self.normalize_series(merged_df[column])
 
         # Calculate weighted score
@@ -130,7 +132,8 @@ class DeepDiscountGrowthCandidateFinder:
             WEIGHTS['avg_eps_growth_percent'] * merged_df['norm_avg_eps_growth_percent'] +
             WEIGHTS['last_quarter_revenue_growth'] * merged_df['norm_last_quarter_revenue_growth'] +
             WEIGHTS['last_quarter_earnings_growth'] * merged_df['norm_last_quarter_earnings_growth'] +
-            WEIGHTS['analyst_rating_score'] * merged_df['norm_analyst_rating_score'] * 100
+            WEIGHTS['analyst_rating_score'] * merged_df['norm_analyst_rating_score'] +
+            WEIGHTS['news_sentiment_score'] * merged_df['news_sentiment_score'] * 100
         )
 
         # Drop all columns that start with 'norm_'

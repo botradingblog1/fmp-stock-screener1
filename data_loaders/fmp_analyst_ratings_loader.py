@@ -4,6 +4,10 @@ from utils.fmp_client import FmpClient
 from utils.log_utils import *
 from utils.file_utils import *
 import time
+from datetime import datetime
+
+
+ANALYST_RATINGS_CACHE_DIR = "cache/analyst_ratings"
 
 
 # Loads analyst ratings from FMP
@@ -67,11 +71,18 @@ class FmpAnalystRatingsLoader:
         for symbol in symbols:
             logd(f"Loading analyst ratings for {symbol}... ({i}/{len(symbol_list)})")
 
-            # Fetch analyst data
-            grades_df = self.fmp_client.get_analyst_ratings(symbol)
-            if grades_df is None or len(grades_df) == 0:
-                logw(f"No grades for {symbol}")
-                continue
+            today_str = datetime.today().strftime("%Y-%m-%d")
+            file_name = f"{symbol}_{today_str}_analyst_ratings.csv"
+            path = os.path.join(ANALYST_RATINGS_CACHE_DIR, file_name)
+            if os.path.exists(path):
+                # Load from cache
+                grades_df = pd.read_csv(path)
+            else:
+                # Fetch remotely
+                grades_df = self.fmp_client.get_analyst_ratings(symbol)
+                if grades_df is None or len(grades_df) == 0:
+                    logw(f"No grades for {symbol}")
+                    continue
 
             # Filter out data more than x months in the past
             cutoff_date = pd.Timestamp.now() - pd.DateOffset(months=num_months_data_cutoff)

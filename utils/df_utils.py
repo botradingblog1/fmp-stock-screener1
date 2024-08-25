@@ -4,6 +4,11 @@ from config import *
 from sklearn.preprocessing import MinMaxScaler
 
 
+def normalize_series(self, series):
+    """Normalize a pandas series to a 0-1 range."""
+    return (series - series.min()) / (series.max() - series.min())
+
+
 def normalize_columns(df, columns_to_normalize):
     scaler = MinMaxScaler()
     df[columns_to_normalize] = scaler.fit_transform(df[columns_to_normalize])

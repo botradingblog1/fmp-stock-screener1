@@ -90,7 +90,4 @@ class FmpAnalystRatingsLoader:
 
             i += 1
 
-            # Throttle for API limit
-            time.sleep(API_REQUEST_DELAY)
-
         return results_df
