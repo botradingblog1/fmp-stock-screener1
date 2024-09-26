@@ -7,6 +7,8 @@ from analysis_tools.inst_own_candidate_finder import InstOwnCandidateFinder
 from analysis_tools.blue_chip_bargain_candidate_finder import BlueChipBargainCandidateFinder
 from analysis_tools.etf_performance_screener import EtfPerformanceScreener
 from analysis_tools.deep_discount_growth_potential import DeepDiscountGrowthCandidateFinder
+from analysis_tools.price_target_candidate_finder import PriceTargetCandidateFinder
+from analysis_tools.profile_builder import ProfileBuilder
 import schedule
 import time
 
@@ -14,6 +16,15 @@ import time
 # Get API key from environment variables
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 
+
+def run_profile_finder():
+    profile_finder = ProfileBuilder(fmp_api_key=FMP_API_KEY)
+    profile_finder.build_profiles()
+
+
+def run_price_target_candidate_finder():
+    finder = PriceTargetCandidateFinder(fmp_api_key=FMP_API_KEY)
+    finder.find_candidates()
 
 def run_deep_discount_growth_screener():
     screener = DeepDiscountGrowthCandidateFinder(FMP_API_KEY)
@@ -63,8 +74,12 @@ def schedule_events():
 if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
-
+    """
+    run_deep_discount_growth_screener()
+    run_inst_own_candidate_finder()
     run_highest_return_finder()
+    """
+    run_profile_finder()
 
     #  Schedule events - to run the script at regular intervals
     schedule_events()

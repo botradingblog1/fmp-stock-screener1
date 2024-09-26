@@ -1,16 +1,21 @@
 import pandas as pd
 from datetime import datetime, timedelta
+from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 
 
-class EarningsEstimateScreener1:
+class FmpEarningsEstimateLoader:
     """
     Filters earnings estimates based on min. average future estimate changes for x periods.
     """
-    def __init__(self):
-        pass
+    def __init__(self, fmp_api_key: str):
+        self.fmp_data_loader = FmpDataLoader(fmp_api_key)
 
-    def run(self, earnings_estimates_dict, min_avg_estimate_percent=None, min_num_analysts=None, num_period=4):
+    def load(self, symbol_list, period="annual", num_future_periods=4, min_avg_estimate_percent=None, min_num_analysts=0):
         results = []
+
+        # Load data
+        earnings_estimates_dict = self.fmp_data_loader.fetch_multiple_analyst_earnings_estimates(symbol_list,
+                                                                                                 period=period)
 
         # Get the current date to filter out past estimates
         current_date = pd.to_datetime(datetime.now().date())
@@ -28,11 +33,11 @@ class EarningsEstimateScreener1:
             earnings_estimate_df = earnings_estimate_df.sort_values(by='date')
 
             # Ensure that we have enough periods to consider
-            if len(earnings_estimate_df) < num_period:
+            if len(earnings_estimate_df) < num_future_periods:
                 continue
 
-            # Select the first num_period rows for future periods
-            future_periods_df = earnings_estimate_df.head(num_period)
+            # Select the first num_future_periods rows for future periods
+            future_periods_df = earnings_estimate_df.head(num_future_periods)
 
             # Calculate the average estimated EPS for the selected periods
             avg_eps_estimate = future_periods_df['estimatedEpsAvg'].mean()

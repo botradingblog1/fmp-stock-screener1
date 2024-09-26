@@ -18,7 +18,7 @@ class GrowthScreener1:
         slope = model.coef_[0]
         return slope
 
-    def run(self, growth_data_dict, min_quarterly_earnings_growth=0.1, min_quarterly_revenue_growth=0.1):
+    def run(self, growth_data_dict, min_quarterly_earnings_growth, min_quarterly_revenue_growth):
         results = []
 
         for symbol, growth_df in growth_data_dict.items():
@@ -49,8 +49,10 @@ class GrowthScreener1:
         growth_df = pd.DataFrame(results)
 
         # Filter out low growth records
-        growth_df = growth_df[growth_df['last_quarter_revenue_growth'] >= min_quarterly_revenue_growth]
-        growth_df = growth_df[growth_df['last_quarter_earnings_growth'] >= min_quarterly_earnings_growth]
+        if min_quarterly_revenue_growth:
+            growth_df = growth_df[growth_df['last_quarter_revenue_growth'] >= min_quarterly_revenue_growth]
+        if min_quarterly_earnings_growth:
+            growth_df = growth_df[growth_df['last_quarter_earnings_growth'] >= min_quarterly_earnings_growth]
         #growth_df = growth_df[growth_df['earnings_acceleration'] == True]
         #growth_df = growth_df[growth_df['revenue_acceleration'] == True]
 

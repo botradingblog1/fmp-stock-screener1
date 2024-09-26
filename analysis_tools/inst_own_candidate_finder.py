@@ -27,7 +27,7 @@ class InstOwnCandidateFinder:
         self.growth_loader = FmpGrowthLoader1(fmp_api_key)
         self.fmp_inst_own_loader = FmpInstOwnDataLoader(fmp_api_key)
         self.momentum_screener = MomentumScreener1()
-        self.undervalued_screener = UndervaluedScreener2()
+        #self.undervalued_screener = UndervaluedScreener2()
         self.growth_screener = GrowthScreener1()
 
     def find_candidates(self):
@@ -69,9 +69,9 @@ class InstOwnCandidateFinder:
         symbol_list = momentum_df['symbol'].unique()
         """
         # Undervalued screener
-        undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict, MIN_PRICE_DROP_PERCENT)
-        logi(f"Undervalued screener returned {len(undervalued_df)} items.")
-        symbol_list = undervalued_df['symbol'].unique()
+        #undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict, MIN_PRICE_DROP_PERCENT)
+        #logi(f"Undervalued screener returned {len(undervalued_df)} items.")
+        #symbol_list = undervalued_df['symbol'].unique()
         
         # Undervalued screener
         #undervalued_df = self.undervalued_screener.run(symbol_list, prices_dict)
@@ -82,20 +82,20 @@ class InstOwnCandidateFinder:
         inst_own_results_df = self.fmp_inst_own_loader.run(symbol_list)
 
         # Merge dataframes
-        merged_df = pd.merge(undervalued_df, inst_own_results_df, on='symbol', how='inner')
+        #merged_df = pd.merge(undervalued_df, inst_own_results_df, on='symbol', how='inner')
 
         # Load growth data
         growth_data_dict = self.growth_loader.fetch(symbol_list)
 
         # Check min earnings/revenue growth and growth acceleration
-        growth_df = self.growth_screener.run(growth_data_dict)
+        growth_df = self.growth_screener.run(growth_data_dict, min_quarterly_revenue_growth=None, min_quarterly_earnings_growth=None)
         if growth_df is None or len(growth_df) == 0:
             logi("Growth screener returned no results")
             return
         logi(f"Growth screener returned {len(growth_df)} items.")
 
         # Merge growth
-        merged_df = pd.merge(merged_df, growth_df, on='symbol', how='inner')
+        merged_df = pd.merge(inst_own_results_df, growth_df, on='symbol', how='inner')
 
         """
         # Normalize columns

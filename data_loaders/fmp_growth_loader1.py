@@ -33,6 +33,9 @@ class FmpGrowthLoader1:
             else:
                 # fetch remotely
                 growth_df = self.fmp_client.get_income_growth(symbol, period="quarter")
+                if growth_df is None or len(growth_df) == 0:
+                    continue
+
                 # Sort data by most recent last
                 growth_df['date'] = pd.to_datetime(growth_df['date'], errors='coerce')
                 growth_df = growth_df.sort_values(by='date', ascending=True)

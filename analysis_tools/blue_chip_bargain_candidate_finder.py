@@ -59,7 +59,7 @@ class BlueChipBargainCandidateFinder:
         growth_data_dict = self.growth_loader.fetch(symbol_list)
 
         # Check min earnings/revenue growth and growth acceleration
-        growth_df = self.growth_screener.run(growth_data_dict)
+        growth_df = self.growth_screener.run(growth_data_dict, min_quarterly_revenue_growth=None, min_quarterly_earnings_growth=None)
         if growth_df is None or len(growth_df) == 0:
             logi("Growth screener returned no results")
             return

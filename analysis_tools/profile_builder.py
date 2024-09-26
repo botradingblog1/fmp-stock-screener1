@@ -13,15 +13,14 @@ from utils.file_utils import *
 from datetime import datetime, timedelta
 
 """
-    Deep Discount, Growth potential looks at 52-week low, current revenue earnings growth, 
+    All purpose company profiel finder, current revenue earnings growth, 
     future earnings estimates and analyst ratings. Calculates weighted score
 """
 
 # Configuration
-DEEP_DISCOUNT_GROWTH_CANDIDATES_DIR = "C:\\dev\\trading\\data\\deep_discount_growth\\candidates"
-DEEP_DISCOUNT_GROWTH_CANDIDATES_FILE_NAME = "deep_discount_growth_candidates.csv"
+CANDIDATES_DIR = "results"
+CANDIDATES_FILE_NAME = "profile_info.csv"
 
-MIN_PRICE_DROP_PERCENT = 0.4
 MIN_CURRENT_QUARTERLY_REVENUE_GROWTH = 0.1
 MIN_CURRENT_QUARTERLY_EARNINGS_GROWTH = 0.1
 MIN_AVG_EARNINGS_ESTIMATE_PERCENT = 0.1
@@ -29,7 +28,6 @@ MIN_NUM_EARNINGS_ANALYSTS = 3
 
 # Weight configuration for each component
 WEIGHTS = {
-    'price_drop_percent': 0.3,
     'avg_eps_growth_percent': 0.2,
     'last_quarter_revenue_growth': 0.1,
     'last_quarter_earnings_growth': 0.1,
@@ -37,7 +35,8 @@ WEIGHTS = {
     'news_sentiment_score': 0.1
 }
 
-class DeepDiscountGrowthCandidateFinder:
+
+class ProfileBuilder:
     def __init__(self, fmp_api_key: str):
         self.market_symbol_loader = MarketSymbolLoader()
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
@@ -48,50 +47,34 @@ class DeepDiscountGrowthCandidateFinder:
         self.earnings_estimate_screener = EarningsEstimateScreener1()
         self.growth_screener = GrowthScreener1()
 
-    def find_candidates(self):
-        logi("Finding undervalued blue chips")
-        # Clean up previous candidates file
-        delete_file(DEEP_DISCOUNT_GROWTH_CANDIDATES_DIR, DEEP_DISCOUNT_GROWTH_CANDIDATES_FILE_NAME)
+    def build_profiles(self):
+        logi("Building company profiles")
+        symbol_list = ["NDAQ", "ABT", "CTVA", "COO", "ARMK", "CNH", "CSX", "GEN", "AXTA", "BALL", "BIIB", "ADM", "BK", "BKNG", "DHI"]
 
-        # Load symbol list
-        symbols_df = self.market_symbol_loader.fetch_russell1000_symbols(cache_file=True)
-        #symbols_df = self.market_symbol_loader.fetch_nasdaq100_symbols(cache_file=True)
-        symbol_list = list(symbols_df['symbol'].unique())
+        # Clean up previous candidates file
+        delete_file(CANDIDATES_DIR, CANDIDATES_FILE_NAME)
 
         # Fetch price history
         start_date = datetime.today() - timedelta(days=DAILY_DATA_FETCH_PERIODS)
         start_date_str = start_date.strftime("%Y-%m-%d")
         end_date = datetime.today()
         end_date_str = end_date.strftime("%Y-%m-%d")
-        prices_dict = self.fmp_data_loader.fetch_multiple_daily_prices_by_date(symbol_list,
-                                                                               start_date_str,
-                                                                               end_date_str,
-                                                                               cache_data=True,
-                                                                               cache_dir=CACHE_DIR)
-        symbol_list = list(prices_dict.keys())
-
-        # 52-week low screener
-        undervalued_df = self.fifty_two_week_low_screener.run(symbol_list,
-                                                              prices_dict,
-                                                              min_price_drop_percent=MIN_PRICE_DROP_PERCENT)
-        logi(f"Fifty-two week low screener returned {len(undervalued_df)} items.")
-        symbol_list = undervalued_df['symbol'].unique()
 
         # Load growth data
         growth_data_dict = self.growth_loader.fetch(symbol_list)
 
         # Check min earnings/revenue growth and growth acceleration
         growth_df = self.growth_screener.run(growth_data_dict,
-                                             MIN_CURRENT_QUARTERLY_EARNINGS_GROWTH,
-                                             MIN_CURRENT_QUARTERLY_REVENUE_GROWTH)
+                                             min_quarterly_earnings_growth=None,
+                                             min_quarterly_revenue_growth=None)
         if growth_df is None or len(growth_df) == 0:
             logi("Growth screener returned no results")
             return
         logi(f"Growth screener returned {len(growth_df)} items.")
 
         # Merge growth
-        merged_df = pd.merge(undervalued_df, growth_df, on='symbol', how='inner')
-        symbol_list = merged_df['symbol'].unique()
+        #merged_df = pd.merge(undervalued_df, growth_df, on='symbol', how='inner')
+        symbol_list = growth_df['symbol'].unique()
 
         # Fetch future earnings estimates
         earnings_estimate_data_dict = self.fmp_data_loader.fetch_multiple_analyst_earnings_estimates(symbol_list,
@@ -100,9 +83,9 @@ class DeepDiscountGrowthCandidateFinder:
 
         # Screener for earnings estimates
         earnings_estimates_df = self.earnings_estimate_screener.run(earnings_estimate_data_dict,
-                                                                    MIN_AVG_EARNINGS_ESTIMATE_PERCENT,
-                                                                    MIN_NUM_EARNINGS_ANALYSTS)
-        merged_df = pd.merge(merged_df, earnings_estimates_df, on='symbol', how='inner')
+                                                                    min_avg_estimate_percent=None,
+                                                                    min_num_analysts=None)
+        merged_df = pd.merge(growth_df, earnings_estimates_df, on='symbol', how='inner')
         symbol_list = merged_df['symbol'].unique()
 
         # Get analyst ratings
@@ -118,14 +101,13 @@ class DeepDiscountGrowthCandidateFinder:
             return
 
         # Normalize the different metrics before calculating the score
-        for column in ['price_drop_percent', 'avg_eps_growth_percent', 'last_quarter_revenue_growth',
+        for column in ['avg_eps_growth_percent', 'last_quarter_revenue_growth',
                        'last_quarter_earnings_growth', 'analyst_rating_score']:
             merged_df[f'norm_{column}'] = normalize_series(merged_df[column])
         # 'news_sentiment_score'
 
         # Calculate weighted score
         merged_df['weighted_score'] = (
-            WEIGHTS['price_drop_percent'] * merged_df['norm_price_drop_percent'] +
             WEIGHTS['avg_eps_growth_percent'] * merged_df['norm_avg_eps_growth_percent'] +
             WEIGHTS['last_quarter_revenue_growth'] * merged_df['norm_last_quarter_revenue_growth'] +
             WEIGHTS['last_quarter_earnings_growth'] * merged_df['norm_last_quarter_earnings_growth'] +
@@ -141,8 +123,8 @@ class DeepDiscountGrowthCandidateFinder:
         merged_df = merged_df.sort_values(by='weighted_score', ascending=False)
 
         # Store results
-        os.makedirs(DEEP_DISCOUNT_GROWTH_CANDIDATES_DIR, exist_ok=True)
-        path = os.path.join(DEEP_DISCOUNT_GROWTH_CANDIDATES_DIR, DEEP_DISCOUNT_GROWTH_CANDIDATES_FILE_NAME)
+        os.makedirs(CANDIDATES_DIR, exist_ok=True)
+        path = os.path.join(CANDIDATES_DIR, CANDIDATES_FILE_NAME)
         merged_df.to_csv(path, index=False)
 
-        logi(f"Deep discount growth candidates saved to {path}")
+        logi(f"Profile candidates saved to {path}")
