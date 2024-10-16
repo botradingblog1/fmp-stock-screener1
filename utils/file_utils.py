@@ -1,4 +1,5 @@
 import os
+import glob
 from config import *
 
 
@@ -24,6 +25,17 @@ def delete_file(directory, file_name):
     if os.path.exists(path):
         os.remove(path)
 
+
+def delete_files_in_directory(dir_path):
+    # Get all files in the directory
+    files = glob.glob(os.path.join(dir_path, "*"))
+
+    for file_path in files:
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Error deleting file {file_path}: {e}")
 
 def get_os_variable(key):
     if key in os.environ:

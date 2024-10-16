@@ -8,6 +8,7 @@ from analysis_tools.blue_chip_bargain_candidate_finder import BlueChipBargainCan
 from analysis_tools.etf_performance_screener import EtfPerformanceScreener
 from analysis_tools.deep_discount_growth_potential import DeepDiscountGrowthCandidateFinder
 from analysis_tools.price_target_candidate_finder import PriceTargetCandidateFinder
+from analysis_tools.analyst_ratings_candidate_finder import AnalystRatingsCandidateFinder
 from analysis_tools.profile_builder import ProfileBuilder
 import schedule
 import time
@@ -25,6 +26,12 @@ def run_profile_finder():
 def run_price_target_candidate_finder():
     finder = PriceTargetCandidateFinder(fmp_api_key=FMP_API_KEY)
     finder.find_candidates()
+
+
+def run_analyst_ratings_candidate_finder():
+    finder = AnalystRatingsCandidateFinder(fmp_api_key=FMP_API_KEY)
+    finder.find_candidates()
+
 
 def run_deep_discount_growth_screener():
     screener = DeepDiscountGrowthCandidateFinder(FMP_API_KEY)
@@ -67,19 +74,24 @@ def schedule_events():
     schedule.every().day.at('01:30').do(run_inst_own_candidate_finder)
     schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder)
     schedule.every().day.at('01:45').do(run_deep_discount_growth_screener)
-
+    schedule.every().day.at('02:00').do(run_analyst_ratings_candidate_finder)
     schedule.every().sunday.at('01:00').do(perform_cleanup)
 
 
 if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
+
+    #run_analyst_ratings_candidate_finder()
+    run_price_target_candidate_finder()
     """
+
     run_deep_discount_growth_screener()
     run_inst_own_candidate_finder()
     run_highest_return_finder()
     """
-    run_profile_finder()
+
+    logd("All done!")
 
     #  Schedule events - to run the script at regular intervals
     schedule_events()

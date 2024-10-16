@@ -13,10 +13,10 @@ from utils.log_utils import *
 
 
 # Configuration
-CANDIDATES_DIR = "C:\\dev\\trading\\data\\price_target\\candidates"
-CANDIDATES_FILE_NAME = "price_target_candidates.csv"
+CANDIDATES_DIR = "C:\\dev\\trading\\data\\analyst_ratings\\candidates"
+CANDIDATES_FILE_NAME = "analyst_ratings_candidates.csv"
 
-class PriceTargetCandidateFinder:
+class AnalystRatingsCandidateFinder:
     def __init__(self, fmp_api_key):
         self.symbol_loader = MarketSymbolLoader()
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
@@ -57,7 +57,7 @@ class PriceTargetCandidateFinder:
         eps_estimates_quarter_df = self.fmp_earnings_estimate_loader.load(symbol_list,
                                                                           period="quarter",
                                                                           num_future_periods=4,
-                                                                          min_avg_estimate_percent=0.05)
+                                                                          min_avg_estimate_percent=None)
         if eps_estimates_quarter_df is not None and not eps_estimates_quarter_df.empty:
             eps_estimates_quarter_df.rename(columns={'avg_eps_growth_percent': 'avg_eps_growth_quarter_percent',
                                                      'avg_num_analysts': 'avg_num_analysts_quarter'}, inplace=True)
@@ -67,7 +67,7 @@ class PriceTargetCandidateFinder:
         eps_estimates_annual_df = self.fmp_earnings_estimate_loader.load(symbol_list,
                                                                          num_future_periods=4,
                                                                          period="annual",
-                                                                         min_avg_estimate_percent=0.05)
+                                                                         min_avg_estimate_percent=None)
         if eps_estimates_annual_df is not None and not eps_estimates_annual_df.empty:
             eps_estimates_annual_df.rename(columns={'avg_eps_growth_percent': 'avg_eps_growth_annual_percent',
                                                     'avg_num_analysts': 'avg_num_analysts_annual'}, inplace=True)
@@ -116,7 +116,7 @@ class PriceTargetCandidateFinder:
         final_df.drop(columns=[col for col in final_df if col.startswith('norm_')], inplace=True)
 
         # Sort by weighted score
-        final_df = final_df.sort_values(by='norm_avg_price_target_change_percent', ascending=False)
+        final_df = final_df.sort_values(by='analyst_rating_score', ascending=False)
 
         # Store results
         os.makedirs(CANDIDATES_DIR, exist_ok=True)

@@ -49,7 +49,7 @@ class ProfileBuilder:
 
     def build_profiles(self):
         logi("Building company profiles")
-        symbol_list = ["NDAQ", "ABT", "CTVA", "COO", "ARMK", "CNH", "CSX", "GEN", "AXTA", "BALL", "BIIB", "ADM", "BK", "BKNG", "DHI"]
+        symbol_list = ["NDAQ", "RL", "TRGP", "WEX", "ABT", "CTVA", "COO", "ARMK", "CNH", "CSX", "GEN", "AXTA", "BALL", "BIIB", "ADM", "BK", "BKNG", "DHI"]
 
         # Clean up previous candidates file
         delete_file(CANDIDATES_DIR, CANDIDATES_FILE_NAME)

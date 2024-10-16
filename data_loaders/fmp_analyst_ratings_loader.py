@@ -60,9 +60,7 @@ class FmpAnalystRatingsLoader:
         })
         return grades_count_df
 
-    def fetch(self, symbol_list):
-        num_months_data_cutoff = 3
-
+    def fetch(self, symbol_list, num_lookback_days=60):
         #  Fetch all symbols
         symbols = symbol_list
         #  Iterate through symbols
@@ -85,7 +83,7 @@ class FmpAnalystRatingsLoader:
                     continue
 
             # Filter out data more than x months in the past
-            cutoff_date = pd.Timestamp.now() - pd.DateOffset(months=num_months_data_cutoff)
+            cutoff_date = pd.Timestamp.now() - pd.DateOffset(days=num_lookback_days)
             grades_df = grades_df[(grades_df['date'] >= cutoff_date) & grades_df['date'].notna()]
 
             # Aggregate counts
