@@ -10,12 +10,19 @@ from analysis_tools.deep_discount_growth_potential import DeepDiscountGrowthCand
 from analysis_tools.price_target_candidate_finder import PriceTargetCandidateFinder
 from analysis_tools.analyst_ratings_candidate_finder import AnalystRatingsCandidateFinder
 from analysis_tools.profile_builder import ProfileBuilder
+from analysis_tools.news_catalyst_finder import NewsCatalystFinder
 import schedule
 import time
 
 
 # Get API key from environment variables
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
+TIINGO_API_KEY = get_os_variable('TIINGO_API_KEY')
+
+
+def run_news_catalyst_finder():
+    catalyst_finder = NewsCatalystFinder(TIINGO_API_KEY)
+    catalyst_finder.find_catalysts()
 
 
 def run_profile_finder():
@@ -75,6 +82,7 @@ def schedule_events():
     schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder)
     schedule.every().day.at('01:45').do(run_deep_discount_growth_screener)
     schedule.every().day.at('02:00').do(run_analyst_ratings_candidate_finder)
+    schedule.every().day.at('03:30').do(run_news_catalyst_finder)
     schedule.every().sunday.at('01:00').do(perform_cleanup)
 
 
@@ -83,7 +91,7 @@ if __name__ == "__main__":
     setup_logger(LOG_FILE_NAME)
 
     #run_analyst_ratings_candidate_finder()
-    run_price_target_candidate_finder()
+    run_news_catalyst_finder()
     """
 
     run_deep_discount_growth_screener()

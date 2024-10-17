@@ -16,6 +16,7 @@ def store_csv(directory, file_name, df):
     if df is None:
         return
     path = os.path.join(directory, file_name)
+    os.makedirs(directory, exist_ok=True)
     if os.path.exists(directory):
         df.to_csv(path)
 

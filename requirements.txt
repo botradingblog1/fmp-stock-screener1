@@ -9,4 +9,5 @@ torch
 scikit-learn
 schedule
 empyrical
+nltk
 botrading==1.0.0
