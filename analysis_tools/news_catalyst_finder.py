@@ -19,7 +19,7 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 # Tag list
-earnings_tags = "record profits,boom,earnings growth,revenue growth,beat,miss,profit surge, net income increase, revenue shortfall"
+earnings_tags = "record profits,boom,earnings growth,revenue growth,beat,miss,profit surge,net income increase,revenue shortfall"
 market_expansion_tags = "emerging market,geographical expansion,global expansion,global presence,market penetration,expansion strategy,market entry,market opportunities,market opportunity"
 product_launch_tags = "product launch,technology breakthrough,AI-powered technology,Next-gen technology,revolutionary product, disruptive technology, AI-driven solution"
 legal_issues_tags = "legal battle,class action lawsuit,legal challenge,lawsuit,SEC investigation,antitrust investigation,regulatory hurdles"
@@ -61,7 +61,7 @@ class NewsCatalystFinder:
     def fetch_news_articles(self, tags, limit=20):
         # Define start and end dates for that day and the day before
         start_date_str = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-        end_date_str = datetime.today().strftime('%Y-%m-%d')
+        end_date_str = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
         # Fetch news
         news_df = self.data_loader.fetch_news_articles_by_tags(tags,
@@ -105,9 +105,11 @@ class NewsCatalystFinder:
 
             # Filter out stories that have a weak sentiment
             news_sentiment_threshold = 0.6
-            news_df = news_df[(news_df['news_sentiment'] > news_sentiment_threshold) | (news_df['news_sentiment'] < -news_sentiment_threshold)]
+            #news_df = news_df[(news_df['news_sentiment'] > news_sentiment_threshold) | (news_df['news_sentiment'] < -news_sentiment_threshold)]
 
             # Combine all news
             combined_news_df = pd.concat([combined_news_df, news_df], axis=0, ignore_index=True)
         # Store news analysis
         store_csv(RESULTS_DIR, "combined_news_tags.csv", combined_news_df)
+
+        logi("News catalyst finder completed.")

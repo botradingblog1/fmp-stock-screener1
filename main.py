@@ -9,6 +9,8 @@ from analysis_tools.etf_performance_screener import EtfPerformanceScreener
 from analysis_tools.deep_discount_growth_potential import DeepDiscountGrowthCandidateFinder
 from analysis_tools.price_target_candidate_finder import PriceTargetCandidateFinder
 from analysis_tools.analyst_ratings_candidate_finder import AnalystRatingsCandidateFinder
+from analysis_tools.trend_pullback_candidate_finder import TrendPullbackFinder
+from analysis_tools.penny_stock_candidate_finder import PennyStockFinder
 from analysis_tools.profile_builder import ProfileBuilder
 from analysis_tools.news_catalyst_finder import NewsCatalystFinder
 import schedule
@@ -19,6 +21,15 @@ import time
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 TIINGO_API_KEY = get_os_variable('TIINGO_API_KEY')
 
+
+def run_penny_stock_finder():
+    penny_stock_finder = PennyStockFinder(TIINGO_API_KEY, FMP_API_KEY)
+    penny_stock_finder.find_candidates()
+
+
+def run_trend_pullback_finder():
+    trend_pullback_finder = TrendPullbackFinder(TIINGO_API_KEY)
+    trend_pullback_finder.find_trend_pullbacks()
 
 def run_news_catalyst_finder():
     catalyst_finder = NewsCatalystFinder(TIINGO_API_KEY)
@@ -76,13 +87,18 @@ def perform_cleanup():
 
 
 def schedule_events():
-    schedule.every().day.at('01:01').do(run_highest_return_finder)
-    schedule.every().day.at('01:15').do(run_ultimate_finder)
-    schedule.every().day.at('01:30').do(run_inst_own_candidate_finder)
-    schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder)
-    schedule.every().day.at('01:45').do(run_deep_discount_growth_screener)
-    schedule.every().day.at('02:00').do(run_analyst_ratings_candidate_finder)
+    #schedule.every().day.at('01:01').do(run_highest_return_finder)
+    #schedule.every().day.at('01:15').do(run_ultimate_finder)
+    #schedule.every().day.at('01:30').do(run_inst_own_candidate_finder)
+    #schedule.every().day.at('01:45').do(run_blue_chip_bargain_candidate_finder)
+    #schedule.every().day.at('01:45').do(run_deep_discount_growth_screener)
+    schedule.every().day.at('01:01').do(run_price_target_candidate_finder)
+    schedule.every().day.at('01:10').do(run_analyst_ratings_candidate_finder)
+    schedule.every().day.at('01:30').do(run_trend_pullback_finder)
+    schedule.every().day.at('01:45').do(run_penny_stock_finder())
     schedule.every().day.at('03:30').do(run_news_catalyst_finder)
+
+
     schedule.every().sunday.at('01:00').do(perform_cleanup)
 
 
@@ -90,11 +106,17 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
+    run_penny_stock_finder()
+    #run_inst_own_candidate_finder()
+    #run_trend_pullback_finder()
+    #run_news_catalyst_finder()
+    #run_price_target_candidate_finder()
     #run_analyst_ratings_candidate_finder()
-    run_news_catalyst_finder()
+    #run_news_catalyst_finder()
+    #run_deep_discount_growth_screener()
     """
 
-    run_deep_discount_growth_screener()
+
     run_inst_own_candidate_finder()
     run_highest_return_finder()
     """

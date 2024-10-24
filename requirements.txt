@@ -10,4 +10,5 @@ scikit-learn
 schedule
 empyrical
 nltk
+kaleido==0.1.0.post1
 botrading==1.0.0

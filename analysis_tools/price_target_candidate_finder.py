@@ -116,7 +116,7 @@ class PriceTargetCandidateFinder:
         final_df.drop(columns=[col for col in final_df if col.startswith('norm_')], inplace=True)
 
         # Sort by weighted score
-        final_df = final_df.sort_values(by='norm_avg_price_target_change_percent', ascending=False)
+        final_df = final_df.sort_values(by='avg_price_target_change_percent', ascending=False)
 
         # Store results
         os.makedirs(CANDIDATES_DIR, exist_ok=True)

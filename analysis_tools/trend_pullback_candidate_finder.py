@@ -21,7 +21,7 @@ class TrendPullbackFinder:
         self.data_loader = TiingoDataLoader(tiingo_api_key)
 
     def calculate_indicators(self, df: pd.DataFrame):
-        long_ema_window = 20
+        long_ema_window = 10
         short_ema_window = 3
 
         # Calculate indicators

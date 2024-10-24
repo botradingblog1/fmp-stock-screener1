@@ -46,8 +46,8 @@ def plot_pullback_chart(symbol,
                                  decreasing_line_color=palette['dark_candle'], name='Price'), row=1, col=1)
 
     # Plot Smoothed close
-    df = add_kernel_reg_smoothed_line(df, column_list=['close'], bandwidth=3, var_type='c')
-    fig.add_trace(go.Scatter(x=df.index, y=df['close_smoothed'], mode='lines', line=dict(color='blue', width=1), name='close smoothed'), row=1, col=1)
+    #df = add_kernel_reg_smoothed_line(df, column_list=['close'], bandwidth=3, var_type='c')
+    #fig.add_trace(go.Scatter(x=df.index, y=df['close_smoothed'], mode='lines', line=dict(color='blue', width=1), name='close smoothed'), row=1, col=1)
 
     # Plot EMAs
     fig.add_trace(go.Scatter(x=df.index, y=df['ema_short'], mode='lines',
