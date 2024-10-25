@@ -95,7 +95,7 @@ def schedule_events():
     schedule.every().day.at('01:01').do(run_price_target_candidate_finder)
     schedule.every().day.at('01:10').do(run_analyst_ratings_candidate_finder)
     schedule.every().day.at('01:30').do(run_trend_pullback_finder)
-    schedule.every().day.at('01:45').do(run_penny_stock_finder())
+    schedule.every().day.at('01:45').do(run_penny_stock_finder)
     schedule.every().day.at('03:30').do(run_news_catalyst_finder)
 
 

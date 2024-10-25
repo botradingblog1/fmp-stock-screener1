@@ -78,8 +78,10 @@ class PennyStockFinder:
         end_date_str = end_date.strftime("%Y-%m-%d")
 
         results = []
+        i = 0
         for symbol in symbol_list:
-            print(f"Processing {symbol}")
+            if i % 10 == 0:
+                print(f"====== Processing {symbol} ({i}/{len(symbol_list)}) ======")
             stock_info_df = stock_list_df[stock_list_df['symbol'] == symbol]
 
             stats = {
@@ -99,10 +101,13 @@ class PennyStockFinder:
                 'avg_price_target_change_percent': 0,
                 'price_target_coefficient_variation': 0,
                 'num_price_target_analysts': 0,
-                'avg_revenue_change_percent': 0,
-                'revenue_change_coefficient_variation': 0,
+                'avg_estimated_revenue_change_percent': 0,
+                'estimated_revenue_change_coefficient_variation': 0,
                 'avg_num_analysts_estimates': 0,
                 'investors_holding_change': 0,
+                'investors_holding': 0,
+                'investors_put_call_ratio': 0,
+                'investors_put_call_ratio_change': 0,
                 'total_invested_change': 0
             }
 
@@ -115,6 +120,7 @@ class PennyStockFinder:
             growth_df = self.fmp_data_loader.get_income_growth(symbol, period="quarter")
             if growth_df is None or len(growth_df) == 0:
                 continue
+            growth_df.replace([np.inf, -np.inf], 0, inplace=True)
 
             # Filter records for the last year
             start_date = datetime.today() - timedelta(days=365)
@@ -127,6 +133,10 @@ class PennyStockFinder:
             stats['avg_net_income_growth'] = growth_df['growthNetIncome'].mean()
             stats['last_revenue_growth'] = growth_df['growthRevenue'].iloc[0]
             stats['last_net_income_growth'] = growth_df['growthNetIncome'].iloc[0]
+
+            # Only keep stocks that made revenue
+            if stats['last_revenue_growth'] < 0 or stats['last_net_income_growth'] < 0:
+                continue
 
             # Load prices
             prices_df = self.data_loader.fetch_end_of_day_prices(symbol, start_date_str, end_date_str,
@@ -149,17 +159,21 @@ class PennyStockFinder:
             # Fetch analyst estimates
             estimates_df, estimate_results = self.estimate_loader.load(symbol, "annual")
             if estimate_results:
-                stats['avg_revenue_change_percent'] = estimate_results['avg_revenue_change_percent']
-                stats['revenue_change_coefficient_variation'] = estimate_results['revenue_change_coefficient_variation']
+                stats['avg_estimated_revenue_change_percent'] = estimate_results['avg_revenue_change_percent']
+                stats['estimated_revenue_change_coefficient_variation'] = estimate_results['revenue_change_coefficient_variation']
                 stats['avg_num_analysts_estimates'] = estimate_results['avg_num_analysts']
 
             # Fetch institutional ownership
             inst_own_df = self.inst_own_loader.run([symbol])
             if inst_own_df is not None and not inst_own_df.empty:
+                stats['investors_holding'] = inst_own_df['investors_holding'].iloc[0]
+                stats['investors_put_call_ratio'] = inst_own_df['investors_put_call_ratio'].iloc[0]
+                stats['investors_put_call_ratio_change'] = inst_own_df['investors_put_call_ratio_change'].iloc[0]
                 stats['investors_holding_change'] = inst_own_df['investors_holding_change'].iloc[0]
                 stats['total_invested_change'] = inst_own_df['total_invested_change'].iloc[0]
 
             results.append(stats)
+            i += 1
 
         # Convert stats to dataframe
         results_df = pd.DataFrame(results)
@@ -167,26 +181,25 @@ class PennyStockFinder:
         # Calculate weighted score (example: simple weighting based on various factors)
         results_df['weighted_score'] = (
             results_df['avg_revenue_growth'] * 0.3 +
-            results_df['analyst_rating_score'] * 0.3 +
+            results_df['analyst_rating_score'] * 0.1 +
             results_df['avg_price_target_change_percent'] * 0.2 +
-            results_df['avg_revenue_change_percent'] * 0.1 +
-            results_df['investors_holding_change'] * 0.1
+            results_df['avg_estimated_revenue_change_percent'] * 0.1 +
+            results_df['investors_holding'] * - results_df['investors_put_call_ratio'] * 0.3
         )
 
         # Sort by weighted score in descending order
-        results_df = results_df.sort_values(by='weighted_score', ascending=False)
-
-        # Keep the top 100 candidates
-        top_100_df = results_df.head(100)
-
-        # Plot charts for the top 10 candidates
-        for index, row in top_100_df.head(10).iterrows():
-            symbol = row['symbol']
-            file_name = f"{symbol}_chart.png"
-            plot_pullback_chart(symbol, prices_df, PLOTS_DIR, file_name=file_name)
+        candidates_df = results_df.sort_values(by='investors_holding', ascending=False)
 
         # Store the results to a CSV file
         file_name = f"penny_stock_candidates_{datetime.today().strftime('%Y-%m-%d')}.csv"
-        store_csv(CACHE_DIR, top_100_df, file_name)
+        store_csv(CANDIDATES_DIR, file_name, candidates_df)
+
+        # Plot charts for the top 10 candidates
+        """
+        for index, row in candidates_df.head(10).iterrows():
+            symbol = row['symbol']
+            file_name = f"{symbol}_chart.png"
+            plot_pullback_chart(symbol, prices_df, PLOTS_DIR, file_name=file_name)
+        """
 
         logi("Done with penny stock analysis.")
