@@ -12,6 +12,7 @@ from analysis_tools.analyst_ratings_candidate_finder import AnalystRatingsCandid
 from analysis_tools.trend_pullback_candidate_finder import TrendPullbackFinder
 from analysis_tools.penny_stock_candidate_finder import PennyStockFinder
 from analysis_tools.profile_builder import ProfileBuilder
+from analysis_tools.market_segment_growth_candidate_finder import MarketSegmentGrowthCandidateFinder
 from analysis_tools.news_catalyst_finder import NewsCatalystFinder
 import schedule
 import time
@@ -20,6 +21,11 @@ import time
 # Get API key from environment variables
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 TIINGO_API_KEY = get_os_variable('TIINGO_API_KEY')
+
+
+def run_market_segment_growth_stock_finder():
+    market_segment_growth_stock_finder = MarketSegmentGrowthCandidateFinder(FMP_API_KEY)
+    market_segment_growth_stock_finder.find_candidates()
 
 
 def run_penny_stock_finder():
@@ -106,7 +112,9 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
-    run_penny_stock_finder()
+    run_market_segment_growth_stock_finder()
+    #run_penny_stock_finder()
+    #run_etf_performance_screener()
     #run_inst_own_candidate_finder()
     #run_trend_pullback_finder()
     #run_news_catalyst_finder()

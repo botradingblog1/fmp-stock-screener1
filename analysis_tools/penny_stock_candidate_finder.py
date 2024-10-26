@@ -70,6 +70,7 @@ class PennyStockFinder:
             logw("No stocks returned from FMP")
             return None
         symbol_list = stock_list_df['symbol']
+        #symbol_list = symbol_list[0:20]
 
         # Set start and end dates
         start_date = datetime.today() - timedelta(days=400)
@@ -135,7 +136,7 @@ class PennyStockFinder:
             stats['last_net_income_growth'] = growth_df['growthNetIncome'].iloc[0]
 
             # Only keep stocks that made revenue
-            if stats['last_revenue_growth'] < 0 or stats['last_net_income_growth'] < 0:
+            if stats['last_revenue_growth'] < 0.01 or stats['last_net_income_growth'] < 0.01:
                 continue
 
             # Load prices
@@ -177,6 +178,15 @@ class PennyStockFinder:
 
         # Convert stats to dataframe
         results_df = pd.DataFrame(results)
+        if len(results_df) == 0:
+            logi(f"No results found")
+            return
+
+        # Filters
+        results_df = results_df[results_df['investors_holding'] >= 10]
+        results_df = results_df[results_df['investors_put_call_ratio'] < 0.5]
+        #results_df = results_df[results_df['investors_holding_change'] > - 0.5]
+        #results_df = results_df[results_df['total_invested_change'] > - 0.5]
 
         # Calculate weighted score (example: simple weighting based on various factors)
         results_df['weighted_score'] = (
@@ -188,7 +198,7 @@ class PennyStockFinder:
         )
 
         # Sort by weighted score in descending order
-        candidates_df = results_df.sort_values(by='investors_holding', ascending=False)
+        candidates_df = results_df.sort_values(by='weighted_score', ascending=False)
 
         # Store the results to a CSV file
         file_name = f"penny_stock_candidates_{datetime.today().strftime('%Y-%m-%d')}.csv"

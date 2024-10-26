@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 

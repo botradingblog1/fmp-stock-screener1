@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 from utils.log_utils import *
@@ -41,6 +42,9 @@ class FmpAnalystEstimatesLoader:
 
         # Calculate percentage change for revenue
         estimates_df['revenue_change_pct'] = estimates_df['estimatedRevenueAvg'].pct_change().dropna()
+
+        # Replace infinite values
+        estimates_df.replace([np.inf, -np.inf], 0, inplace=True)
 
         # Calculate average revenue percentage change
         avg_revenue_change_percent = estimates_df['revenue_change_pct'].mean()
