@@ -10,5 +10,6 @@ scikit-learn
 schedule
 empyrical
 nltk
+openpyxl
 kaleido==0.1.0.post1
 botrading==1.0.0

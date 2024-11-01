@@ -29,7 +29,7 @@ def run_market_segment_growth_stock_finder():
 
 
 def run_penny_stock_finder():
-    penny_stock_finder = PennyStockFinder(TIINGO_API_KEY, FMP_API_KEY)
+    penny_stock_finder = PennyStockFinder(FMP_API_KEY)
     penny_stock_finder.find_candidates()
 
 
@@ -112,8 +112,8 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
-    run_market_segment_growth_stock_finder()
-    #run_penny_stock_finder()
+    #run_market_segment_growth_stock_finder()
+    run_penny_stock_finder()
     #run_etf_performance_screener()
     #run_inst_own_candidate_finder()
     #run_trend_pullback_finder()

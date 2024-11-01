@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 
 # Configuration
 USE_INSTITUTIONAL_OWNERSHIP_API = True
-CANDIDATES_DIR = "candidates"
+CANDIDATES_DIR = "C:\\dev\\trading\\data\\market_segment_growth\\candidates"
 CACHE_DIR = "cache"  # Added definition for CACHE_DIR
 
 """
@@ -23,6 +23,14 @@ CACHE_DIR = "cache"  # Added definition for CACHE_DIR
     Based on BCC Research report info here: https://www.bccresearch.com/report/justreleased
     Open each report detail page and look at the table below to find numbers for future market size,
     CAGR and associated companies.
+    
+        To add a new market segment:
+    1. Find a new segment here:
+       https://www.bccresearch.com/report/justreleased
+    2. Get the numbers for segment name, future market size, CAGR and companies from the overview table
+    3. For each company name, look up the stock symbl
+    4. Create a new section for the market segment in the market_segment_info array
+    5. Add the symbols and company names to the symbol_company_name_map for lookup if not already present
 """
 
 market_segment_info = [
@@ -94,7 +102,7 @@ market_segment_info = [
     },
     {
         "name": "Electric Vehicles and Fuel Cell Vehicles",
-        "future_market_size": 1100,
+        "future_market_size": 1800,
         "CAGR": 18,
         "symbol_list": ['BMWYY', 'BYDDY', 'CQCQF', 'GNENY', 'GM', 'GWLLY', 'HYMTF', 'LI', 'MBGAF', 'SAICF', 'STLA', 'TSLA', 'TM', 'VWAGY', 'VOLAF', 'GELYY']
     },
@@ -433,9 +441,10 @@ class MarketSegmentGrowthCandidateFinder:
         results_df['weighted_score'] = results_df['weighted_score'].round(2)
 
         # Sort by market segment and weighted score
-        candidates_df = results_df.sort_values(by=['market_segment_cagr', 'weighted_score'], ascending=[False, False])
+        candidates_df = results_df.sort_values(by=['future_market_size', 'weighted_score'], ascending=[False, False])
 
         # Store the results to a CSV file
+        os.makedirs(CANDIDATES_DIR, exist_ok=True)
         file_name = f"growth_market_sector_candidates_{datetime.today().strftime('%Y-%m-%d')}.csv"
         store_csv(CANDIDATES_DIR, file_name, candidates_df)
 

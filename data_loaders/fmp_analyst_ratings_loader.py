@@ -94,7 +94,11 @@ class FmpAnalystRatingsLoader:
 
             #  Add individual stock results to all results
             total_rating = grades_df['total_rating'].iloc[0]
-            row = pd.DataFrame({'symbol': [symbol], 'analyst_rating_score': [total_rating]})
+            hold_count = grades_df['hold_count'].iloc[0]
+            bullish_count = grades_df['bullish_count'].iloc[0]
+            bearish_count = grades_df['bearish_count'].iloc[0]
+            row = pd.DataFrame({'symbol': [symbol], 'bullish_count': [bullish_count], 'hold_count': [hold_count],
+                                'bearish_count': [bearish_count], 'analyst_rating_score': [total_rating]})
             results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
             i += 1

@@ -26,6 +26,7 @@ class FmpInstOwnDataLoader:
             if inst_own_df is None or len(inst_own_df) == 0:
                 logi(f"No institutional ownership data for {symbol}")
 
+            total_invested = inst_own_df['totalInvested'].iloc[0]
             total_invested_change = inst_own_df['totalInvestedChange'].iloc[0]
             investors_holding_change = inst_own_df['investorsHoldingChange'].iloc[0]
             investors_holding = inst_own_df['investorsHolding'].iloc[0]
@@ -34,8 +35,9 @@ class FmpInstOwnDataLoader:
             row = {
                 'symbol': symbol,
                 'investors_holding': investors_holding,
-                'total_invested_change': round(total_invested_change, 2),
                 'investors_holding_change': round(investors_holding_change, 2),
+                'total_invested': round(total_invested, 0),
+                'total_invested_change': round(total_invested_change, 2),
                 'investors_put_call_ratio':  round(put_call_ratio, 2),
                 'investors_put_call_ratio_change': round(put_call_ratio_change, 2)
             }
@@ -47,3 +49,29 @@ class FmpInstOwnDataLoader:
         logi(f"Done fetching institutional ownership data...")
 
         return inst_own_results_df
+
+    def load_for_symbol(self, symbol):
+        # Fetch institutional ownership data
+        inst_own_df = self.fmp_data_loader.fetch_institutional_ownership_changes(symbol)
+        if inst_own_df is None or len(inst_own_df) == 0:
+            return {}
+
+        total_invested = inst_own_df['totalInvested'].iloc[0]
+        total_invested_change = inst_own_df['totalInvestedChange'].iloc[0]
+        investors_holding_change = inst_own_df['investorsHoldingChange'].iloc[0]
+        investors_holding = inst_own_df['investorsHolding'].iloc[0]
+        put_call_ratio = inst_own_df['putCallRatio'].iloc[0]
+        put_call_ratio_change = inst_own_df['putCallRatioChange'].iloc[0]
+
+        # Create output row
+        results = {
+            'symbol': symbol,
+            'investors_holding': investors_holding,
+            'investors_holding_change': round(investors_holding_change, 2),
+            'total_invested': round(total_invested, 0),
+            'total_invested_change': round(total_invested_change, 2),
+            'investors_put_call_ratio': round(put_call_ratio, 2),
+            'investors_put_call_ratio_change': round(put_call_ratio_change, 2)
+        }
+
+        return results

@@ -4,7 +4,15 @@ from statsmodels.nonparametric.kernel_regression import KernelReg
 import numpy as np
 import talib
 import pandas_ta as ta
+from scipy.stats import linregress
 
+
+
+def calculate_trend_linear_regression(values: list):
+    x = np.arange(len(values))
+    slope, intercept, _, _, _ = linregress(x, values)
+    trend = intercept + slope * x
+    return trend
 
 
 def calculate_trend(df: pd.DataFrame, bandwidth: int = 9):
@@ -51,11 +59,6 @@ def compute_slope(df: pd.DataFrame, target_col: str, slope_col: str, window_size
         pd.DataFrame: The DataFrame with the computed slopes added as a new column.
     """
 
-    def compute_slope_internal(y_values):
-        x_values = np.arange(len(y_values))
-        m, _ = np.polyfit(x_values, y_values, 1)
-        return m
-
     # Ensure the target column exists in the DataFrame
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' does not exist in the DataFrame.")
@@ -67,6 +70,22 @@ def compute_slope(df: pd.DataFrame, target_col: str, slope_col: str, window_size
     df.loc[:, slope_col] = df[target_col].rolling(window=window_size).apply(compute_slope_internal, raw=True)
 
     return df
+
+
+def compute_slope_internal(y_values):
+    # Remove non-finite values (NaN, inf) from y_values
+    y_values = y_values[np.isfinite(y_values)]
+
+    # Check if y_values is empty, all zeros, or contains fewer than 2 points
+    if len(y_values) < 2 or np.all(y_values == 0):
+        return 0
+
+    # Recreate x_values after filtering y_values
+    x_values = np.arange(len(y_values))
+
+    # Calculate the slope
+    m, _ = np.polyfit(x_values, y_values, 1)
+    return m
 
 
 def calculate_trend_numpy(values):
