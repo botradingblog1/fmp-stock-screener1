@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, numbers
 import os
 
 
@@ -31,13 +31,13 @@ class ExcelScreenerReportGenerator:
         return sheet
 
     def build_news_sheet(self, writer: any, df: pd.DataFrame):
-        df.to_excel(writer, sheet_name="News Headlines", index=False)
-        sheet = writer.sheets["News Headlines"]
+        df.to_excel(writer, sheet_name="News", index=False)
+        sheet = writer.sheets["News"]
         self.format_sheet_column_values(sheet)
         sheet.freeze_panes = sheet["A2"]  # Freeze first row
 
         # Wrap and format news headlines
-        sheet.column_dimensions["B"].width = 60
+        sheet.column_dimensions["B"].width = 100
         is_header_row = True
         for cell in sheet["B"]:
             if is_header_row:
@@ -45,13 +45,34 @@ class ExcelScreenerReportGenerator:
                 continue
             cell.alignment = Alignment(wrap_text=True)
             sheet.row_dimensions[cell.row].height = 60
+
+        # Wrap and format urls
+        sheet.column_dimensions["C"].width = 100
+        is_header_row = True
+        for cell in sheet["C"]:
+            if is_header_row:
+                is_header_row = False
+                continue
+            cell.alignment = Alignment(wrap_text=True)
+            sheet.row_dimensions[cell.row].height = 60
+
         return sheet
 
     def build_generic_sheet(self, writer: any, title: str = "sheet", data_df: pd.DataFrame = None):
         data_df.to_excel(writer, sheet_name=title, index=False)
         sheet = writer.sheets[title]
-        self.format_sheet_column_values(sheet)
         sheet.freeze_panes = sheet["A2"]  # Freeze first row
+
+        # Automatically detect columns with values > 1000 and apply number format
+        for col in data_df.columns:
+            if pd.api.types.is_numeric_dtype(data_df[col]):
+                if (data_df[col] > 1000).any():  # Check if any value in column is > 1000
+                    col_idx = data_df.columns.get_loc(col) + 1  # Get the column index in Excel (1-based)
+                    for cell in sheet.iter_cols(min_col=col_idx, max_col=col_idx, min_row=2):
+                        for c in cell:
+                            c.number_format = numbers.FORMAT_NUMBER_COMMA_SEPARATED1
+        self.format_sheet_column_values(sheet)
+
         return sheet
 
     def generate_report(self,

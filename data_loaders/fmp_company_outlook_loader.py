@@ -16,11 +16,13 @@ class FmpCompanyOutlookLoader:
     def __init__(self, fmp_api_key):
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
 
-    def aggregate_news_data(self, news_data: list, separator: str = " | "):
+    def aggregate_news_data(self, symbol, news_data: list, separator: str = " | "):
         output = ""
+        url_output = ""
         for i, news_item in enumerate(news_data):
             if i > 0:
                 output += separator
+                url_output += separator
             published_date = pd.to_datetime(news_item.get('publishedDate', None), errors='coerce')
             if published_date is not pd.NaT:
                 published_date_str = published_date.strftime("%Y-%m-%d %H:%M:%S")
@@ -28,7 +30,12 @@ class FmpCompanyOutlookLoader:
                 published_date_str = "N/A"
             title = news_item.get('title', "No Title")
             output += f"{published_date_str}: {title}"
-        return output
+            url_output += news_item.get("url", "")
+        return {
+            "symbol": symbol,
+            "news_headlines": output,
+            "urls": url_output
+        }
 
     def calculate_income_stats(self, income_data: list):
         stats = {}
@@ -85,7 +92,7 @@ class FmpCompanyOutlookLoader:
             compute_slope_internal(balance_sheet_df['totalStockholdersEquity'].pct_change().dropna().values), 2)
         return stats
 
-    def calculate_cashflow_stats(self, cashflow_data: list):
+    def calculate_cashflow_stats(self, cashflow_data: list, balance_sheet_data: list=None):
         stats = {}
         if not cashflow_data:
             return stats
@@ -112,7 +119,35 @@ class FmpCompanyOutlookLoader:
             compute_slope_internal(cashflow_df['freeCashFlow'].pct_change().dropna().values), 2)
         stats['net_cash_for_investing_trend'] = round(
             compute_slope_internal(cashflow_df['netCashUsedForInvestingActivites'].pct_change().dropna().values), 2)
+
+        # Calculate cash runway for quarterly cashflow stats
+        if balance_sheet_data is not None:
+            stats['cash_runway'] = self.calculate_cash_runway(balance_sheet_data, cashflow_data)
+
         return stats
+
+    def calculate_cash_runway(self, balance_sheet_data: list, cashflow_data: list):
+            # Get latest balance sheet and cash flow statement
+            if len(balance_sheet_data) == 0 or len(cashflow_data) == 0:
+                return 0
+
+            latest_balance_sheet = balance_sheet_data[0]  # Latest quarter balance
+            latest_cash_flow = cashflow_data[0]  # Latest quarter cash flow
+
+            # Retrieve cash and equivalents and operating cash flow
+            cash_equivalents = latest_balance_sheet.get("cashAndCashEquivalents", 0)
+            operating_cash_flow = latest_cash_flow.get("netCashProvidedByOperatingActivities", 0)
+
+            # Calculate monthly burn rate (assuming burn rate is operating cash flow over three months)
+            monthly_burn_rate = abs(operating_cash_flow) / 3 if operating_cash_flow < 0 else 0
+
+            # Calculate cash runway in months
+            if monthly_burn_rate > 0:
+                cash_runway_months = cash_equivalents / monthly_burn_rate
+            else:
+                cash_runway_months = 1000 * 12  # Basically infinite positive operating cash flow
+
+            return round(cash_runway_months, 2)
 
     def load(self, symbol: str):
         results = {}
@@ -129,7 +164,7 @@ class FmpCompanyOutlookLoader:
         # Add news data
         news_data = company_outlook_data.get('stockNews', [])
         results['news_data'] = news_data
-        results['news_headlines'] = self.aggregate_news_data(news_data)
+        results['news_headlines'] = self.aggregate_news_data(symbol, news_data, separator="\n")
 
         # Get financial ratios
         ratios_list = company_outlook_data.get('ratios', [{}])
@@ -156,11 +191,12 @@ class FmpCompanyOutlookLoader:
 
         # Parse cash flow data
         results['annual_cashflow_data'] = company_outlook_data.get('financialsAnnual', {}).get('cash', [])
+        quarterly_balance_sheet_data = company_outlook_data.get('financialsQuarter', {}).get('balance', [])
         results['annual_cashflow_stats'] = self.calculate_cashflow_stats(results['annual_cashflow_data'])
         results['annual_cashflow_stats']['symbol'] = symbol
 
         results['quarterly_cashflow_data'] = company_outlook_data.get('financialsQuarter', {}).get('cash', [])
-        results['quarterly_cashflow_stats'] = self.calculate_cashflow_stats(results['quarterly_cashflow_data'])
+        results['quarterly_cashflow_stats'] = self.calculate_cashflow_stats(results['quarterly_cashflow_data'], quarterly_balance_sheet_data)
         results['quarterly_cashflow_stats']['symbol'] = symbol
 
         # Get rating
