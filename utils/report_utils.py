@@ -142,6 +142,9 @@ def calculate_price_target_score(in_df: pd.DataFrame):
 
 
 def calculate_inst_own_score(in_df: pd.DataFrame):
+    if len(in_df) == 0:
+        return in_df
+
     df = in_df.copy()
     # Normalize relevant columns
     df = normalize_columns(df, ['investors_holding', 'investors_holding_change', 'total_invested',

@@ -59,6 +59,8 @@ class ExcelScreenerReportGenerator:
         return sheet
 
     def build_generic_sheet(self, writer: any, title: str = "sheet", data_df: pd.DataFrame = None):
+        if data_df is None or len(data_df) == 0:
+            return None
         data_df.to_excel(writer, sheet_name=title, index=False)
         sheet = writer.sheets[title]
         sheet.freeze_panes = sheet["A2"]  # Freeze first row
@@ -97,6 +99,11 @@ class ExcelScreenerReportGenerator:
             if 'news_data' in data:
                 news_data = data['news_data']
                 self.build_news_sheet(writer, news_data)
+
+            # Build ratios sheet
+            if 'ratios_data' in data:
+                ratios_data = data['ratios_data']
+                self.build_generic_sheet(writer, "Ratios", ratios_data)
 
             # Build quarterly income sheet
             if 'quarterly_income_data' in data:

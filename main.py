@@ -11,6 +11,8 @@ from analysis_tools.price_target_candidate_finder import PriceTargetCandidateFin
 from analysis_tools.analyst_ratings_candidate_finder import AnalystRatingsCandidateFinder
 from analysis_tools.trend_pullback_candidate_finder import TrendPullbackFinder
 from analysis_tools.penny_stock_candidate_finder import PennyStockFinder
+from analysis_tools.overvalued_stock_candidate_finder import OvervaluedStockCandidateFinder
+from analysis_tools.value_stock_candidate_finder import ValueStockCandidateFinder
 from analysis_tools.profile_builder import ProfileBuilder
 from analysis_tools.market_segment_growth_candidate_finder import MarketSegmentGrowthCandidateFinder
 from analysis_tools.news_catalyst_finder import NewsCatalystFinder
@@ -32,6 +34,15 @@ def run_penny_stock_finder():
     penny_stock_finder = PennyStockFinder(FMP_API_KEY)
     penny_stock_finder.find_candidates()
 
+
+def run_overvalued_stock_finder():
+    candidate_finder = OvervaluedStockCandidateFinder(FMP_API_KEY)
+    candidate_finder.find_candidates()
+
+
+def run_value_stock_finder():
+    candidate_finder = ValueStockCandidateFinder(FMP_API_KEY)
+    candidate_finder.find_candidates()
 
 def run_trend_pullback_finder():
     trend_pullback_finder = TrendPullbackFinder(TIINGO_API_KEY)
@@ -113,7 +124,9 @@ if __name__ == "__main__":
     setup_logger(LOG_FILE_NAME)
 
     #run_market_segment_growth_stock_finder()
-    run_penny_stock_finder()
+    #run_penny_stock_finder()
+    #run_overvalued_stock_finder()
+    run_value_stock_finder()
     #run_etf_performance_screener()
     #run_inst_own_candidate_finder()
     #run_trend_pullback_finder()

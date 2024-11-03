@@ -13,77 +13,75 @@ from report_generators.excel_screener_report_generator import ExcelScreenerRepor
 import os
 
 USE_INSTITUTIONAL_OWNERSHIP_API = True
-CANDIDATES_DIR = "C:\\dev\\trading\\data\\penny_stocks"
-
-"""
-Focus on penny stocks with low price < $5, positive revenue trend, long cash runway
-"""
+CANDIDATES_DIR = "C:\\dev\\trading\\data\\overvalued_small_caps"
 
 
 # Functions to calculate score
 def calculate_ratios_score(in_df: pd.DataFrame):
     df = in_df.copy()
-    df = normalize_columns(df, ['grossProfitMarginTTM', 'currentRatioTTM', 'debtEquityRatioTTM'])
+    # Normalize columns relevant for overvaluation
+    df = normalize_columns(df, ['priceToSalesRatioTTM', 'priceEarningsRatioTTM', 'debtEquityRatioTTM'])
 
+    # Score emphasizes overvaluation and high debt
     in_df['ratios_score'] = round((
-        df['grossProfitMarginTTM'] * 0.6 +  # Emphasize profitability
-        df['currentRatioTTM'] * 0.3 -  # Moderate weight on liquidity
-        df['debtEquityRatioTTM'] * 0.1  # Penalty for leverage
+        df['priceToSalesRatioTTM'] * 0.5 +  # Strong weight on Price-to-Sales ratio
+        df['debtEquityRatioTTM'] * 0.2  # Penalize high debt levels
     ), 2)
     return in_df
 
 
 def calculate_quarterly_income_score(in_df: pd.DataFrame):
     df = in_df.copy()
-    df = normalize_columns(df, ['last_revenue', 'revenue_trend', 'cost_expenses_trend'])
+    # Normalize columns for growth indicators
+    df = normalize_columns(df, ['revenue_change', 'revenue_trend'])
+
+    # Invert scoring to favor stocks with decreasing revenue and revenue trends
     in_df['quarterly_income_score'] = round((
-        df['last_revenue'] * 0.1 +
-        df['revenue_trend'] * 0.6 -
-        df['cost_expenses_trend'] * 0.3  # Penalty for expenses trend
+        (1 / (df['revenue_trend'] + 1e-6)) * 0.6 +  # Favor low or negative revenue trends, avoid div by zero
+        (1 / (df['revenue_change'].fillna(0) + 1e-6)) * 0.3  # Favor low recent revenue change, handle missing values
     ), 2)
     return in_df
 
 
 def calculate_annual_income_score(in_df: pd.DataFrame):
     df = in_df.copy()
-    df = normalize_columns(df, ['last_revenue', 'revenue_trend', 'cost_expenses_trend'])
+    # Normalize columns for growth indicators
+    df = normalize_columns(df, ['revenue_change', 'revenue_trend'])
+
+    # Invert scoring to favor stocks with decreasing revenue and revenue trends
     in_df['annual_income_score'] = round((
-        df['last_revenue'] * 0.1 +
-        df['revenue_trend'] * 0.6 -
-        df['cost_expenses_trend'] * 0.3  # Penalty for expenses trend
+        (1 / (df['revenue_trend'] + 1e-6)) * 0.6 +  # Favor low or negative revenue trends, avoid div by zero
+        (1 / (df['revenue_change'].fillna(0) + 1e-6)) * 0.3  # Favor low recent revenue change, handle missing values
     ), 2)
     return in_df
 
+
 def calculate_quarterly_balance_sheet_score(in_df: pd.DataFrame):
-    df = in_df.copy()
-    df = normalize_columns(df, ['last_cash_short_term_investments', 'last_total_debt'])
-    in_df['quarterly_balance_sheet_score'] = round((
-        df['last_cash_short_term_investments'] * 0.5 -  # High weight on liquidity
-        df['last_total_debt'] * 0.5  # Moderate penalty for debt
-    ), 2)
+    # This score can be included as part of ratios or quarterly income if preferred, but keeping it for compatibility
+    # We'll assign it a neutral score as it’s not actively used in this screener
+    in_df['quarterly_balance_sheet_score'] = 0
     return in_df
 
 
 def calculate_quarterly_cashflow_score(in_df: pd.DataFrame):
-    df = in_df.copy()
-    df = normalize_columns(df, ['last_operating_cashflow', 'free_cashflow_trend', 'capital_expenditure_trend',
-                                'cash_runway'])
-    in_df['quarterly_cashflow_score'] = round((
-        df['last_operating_cashflow'] * 0.2 +  # High weight on cash flow
-        df['free_cashflow_trend'] * 0.2 +  # Moderate weight on cash flow trend
-        df['cash_runway'] * 0.4 -  # Emphasis on runway
-        df['capital_expenditure_trend'] * 0.2  # Penalize high capital expenditure trend
-    ), 2)
+    # Neutral score, not emphasized in this screener
+    in_df['quarterly_cashflow_score'] = 0
     return in_df
 
 
 def calculate_inst_own_score(in_df: pd.DataFrame):
+    if len(in_df) == 0:
+        return in_df
+
     df = in_df.copy()
-    df = normalize_columns(df, ['investors_holding', 'investors_holding_change', 'investors_put_call_ratio'])
+    # Normalize relevant columns
+    df = normalize_columns(df, ['investors_holding', 'investors_holding_change', 'total_invested',
+                                'total_invested_change', 'investors_put_call_ratio'])
+
+    # Calculate score, penalizing high put/call ratio
     in_df['inst_own_score'] = round((
-        df['investors_holding'] * 0.5 +  # Emphasis on institutional holding
-        df['investors_holding_change'] * 0.3 -  # Moderate weight on change
-        df['investors_put_call_ratio'] * 0.2  # Penalty for high put-call ratio
+        df['investors_holding_change'] * 0.4 -
+        df['investors_put_call_ratio'] * 0.6
     ), 2)
     return in_df
 
@@ -91,38 +89,41 @@ def calculate_inst_own_score(in_df: pd.DataFrame):
 def calculate_final_score(ratios_df, quarterly_income_df, annual_income_df,
                           quarterly_balance_sheet_df, quarterly_cashflow_df,
                           inst_own_df=None):
+    # Merge scores by symbol
     scores_df = ratios_df[['symbol', 'ratios_score']].merge(
         quarterly_income_df[['symbol', 'quarterly_income_score']], on='symbol', how='outer'
     ).merge(
         annual_income_df[['symbol', 'annual_income_score']], on='symbol', how='outer'
-    ).merge(
+    )
+    scores_df = scores_df.merge(
         quarterly_balance_sheet_df[['symbol', 'quarterly_balance_sheet_score']], on='symbol', how='outer'
-    ).merge(
+    )
+    scores_df = scores_df.merge(
         quarterly_cashflow_df[['symbol', 'quarterly_cashflow_score']], on='symbol', how='outer'
     )
 
     if inst_own_df is not None:
-        scores_df = scores_df.merge(inst_own_df[['symbol', 'inst_own_score']], on='symbol', how='outer')
+        scores_df = scores_df.merge(
+            inst_own_df[['symbol', 'inst_own_score']], on='symbol', how='outer'
+        )
     else:
         scores_df['inst_own_score'] = 0
 
-    # Replace NaNs
+    # Fill NaNs with 0 and calculate final score
     scores_df = scores_df.fillna(0)
 
-    # Final score calculation
-    scores_df['final_score'] = round((scores_df['ratios_score'] * 0.2 +
-                                     scores_df['quarterly_income_score'] * 0.3 +
-                                     scores_df['annual_income_score'] * 0.1 +
+    scores_df['final_score'] = round((scores_df['ratios_score'] * 0.4 +
+                                     scores_df['quarterly_income_score'] * 0.2 +
+                                      scores_df['annual_income_score'] * 0.1 +
                                      scores_df['quarterly_balance_sheet_score'] * 0.1 +
-                                     scores_df['quarterly_cashflow_score'] * 0.2 +
-                                     scores_df['inst_own_score'] * 0.1), 2)
+                                     scores_df['quarterly_cashflow_score'] * 0.1), 2)
 
-
+    # Sort by final score in descending order to rank by highest overvaluation and weakest fundamentals
     scores_df.sort_values(by='final_score', ascending=False, inplace=True)
     return scores_df
 
 
-class PennyStockFinder:
+class OvervaluedStockCandidateFinder:
     def __init__(self, fmp_api_key: str):
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
         self.analyst_ratings_loader = FmpAnalystRatingsLoader(fmp_api_key)
@@ -133,14 +134,13 @@ class PennyStockFinder:
         self.report_generator = ExcelScreenerReportGenerator()
 
     def find_candidates(self):
-        logi("Finding penny stock candidates...")
+        logi("Finding overvalued stock candidates...")
 
         # Load stock screener results
         stock_list_df = self.fmp_data_loader.fetch_stock_screener_results(
             exchange_list="nyse,nasdaq,amex",
-            price_more_than=1.0,
-            price_lower_than=4.0,
-            market_cap_lower_than=200000000,  # small-cap
+            price_more_than=200.0,
+            price_lower_than=5000.0,
             is_actively_trading=True,
             is_fund=False,
             is_etf=False,
@@ -154,7 +154,7 @@ class PennyStockFinder:
 
         # Sample a few symbols for demonstration
         symbol_list = stock_list_df['symbol'].unique()
-        #symbol_list = symbol_list[:5]
+        #symbol_list = symbol_list[:10]
 
         # Lists to store stats
         profile_list, ratios_list, news_list = [], [], []
@@ -177,7 +177,14 @@ class PennyStockFinder:
                 continue
 
             # Populate outlook results
-            profile_list.append(outlook_dict.get('profile', {}))
+            profile = outlook_dict.get('profile', {})
+
+            # Filter sectors
+            if profile.get('sector', "") not in ['Healthcare', 'Technology']:
+                continue
+
+            # Parse company outlook
+            profile_list.append(profile)
             ratios = outlook_dict.get('ratios', {})
             ratios['symbol'] = symbol
             ratios_list.append(outlook_dict.get('ratios', {}))
@@ -188,6 +195,7 @@ class PennyStockFinder:
             annual_balance_sheet_stats_list.append(outlook_dict.get('annual_balance_sheet_stats', {}))
             quarterly_cashflow_stats_list.append(outlook_dict.get('quarterly_cashflow_stats', {}))
             annual_cashflow_stats_list.append(outlook_dict.get('annual_cashflow_stats', {}))
+
 
             # Fetch price targets
             price_target_dict = self.price_target_loader.load(symbol)
@@ -214,8 +222,8 @@ class PennyStockFinder:
                               'debtEquityRatioTTM', 'interestCoverageTTM']
         ratios_df = pd.DataFrame(ratios_list, columns=ratios_column_list)
 
-        income_column_list = ['symbol', 'last_revenue', 'last_net_income', 'last_cost_expenses', 'revenue_trend',
-                              'net_income_trend', 'cost_expenses_trend']
+        income_column_list = ['symbol', 'last_revenue', 'last_net_income', 'last_cost_expenses', 'revenue_change',
+                              'revenue_trend', 'net_income_trend', 'cost_expenses_trend']
         quarterly_income_df = pd.DataFrame(quarterly_income_stats_list, columns=income_column_list)
         annual_income_df = pd.DataFrame(annual_income_stats_list, columns=income_column_list)
 
@@ -243,6 +251,10 @@ class PennyStockFinder:
                                 'investors_put_call_ratio', 'investors_put_call_ratio_change']
         inst_own_df = pd.DataFrame(inst_own_data_list, columns=inst_own_column_list)
 
+        # Apply filters
+        #quarterly_income_df = quarterly_income_df[quarterly_income_df['revenue_trend'] < 0]
+        #annual_income_df = annual_income_df[annual_income_df['revenue_trend'] < 0]
+
         # Calculate section scores
         ratios_df = calculate_ratios_score(ratios_df)
         quarterly_income_df = calculate_quarterly_income_score(quarterly_income_df)
@@ -255,9 +267,9 @@ class PennyStockFinder:
         inst_own_df = calculate_inst_own_score(inst_own_df)
 
         # Calculate final score and sort each DataFrame by it
-        scores_df = calculate_final_score(ratios_df, quarterly_income_df,
-                                          annual_income_df, quarterly_balance_sheet_df,
-                                          quarterly_cashflow_df, inst_own_df)
+        scores_df = calculate_final_score(ratios_df, quarterly_income_df, annual_income_df,
+                                          quarterly_balance_sheet_df, quarterly_cashflow_df,
+                                          inst_own_df)
 
         # Optional - Sort the sections in the same order as the final score
         profile_df = align_section_order(scores_df, profile_df)
@@ -291,7 +303,7 @@ class PennyStockFinder:
             report_data['inst_own_data'] = inst_own_df
 
         # Generate report
-        file_name = f"penny_stock_candidates_{datetime.today().strftime('%Y-%m-%d')}.xlsx"
+        file_name = f"overvalued_small_caps_{datetime.today().strftime('%Y-%m-%d')}.xlsx"
         self.report_generator.generate_report(report_data, CANDIDATES_DIR, file_name)
 
-        logi("Done with penny stock analysis.")
+        logi("Done with overvalued small caps analysis.")

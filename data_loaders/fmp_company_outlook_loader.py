@@ -55,7 +55,9 @@ class FmpCompanyOutlookLoader:
                                             2) if 'costAndExpenses' in income_stats_df else np.nan
 
         # Calculate trends on percentage changes
-        stats['revenue_trend'] = round(compute_slope_internal(income_stats_df['revenue'].pct_change().dropna().values),
+        income_stats_df['revenue_change'] = income_stats_df['revenue'].pct_change().dropna()
+        stats['revenue_change'] = income_stats_df['revenue_change'].iloc[-1]
+        stats['revenue_trend'] = round(compute_slope_internal(income_stats_df['revenue_change'].values),
                                        2)
         stats['net_income_trend'] = round(
             compute_slope_internal(income_stats_df['netIncome'].pct_change().dropna().values), 2)
