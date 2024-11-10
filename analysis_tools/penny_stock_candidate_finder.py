@@ -37,9 +37,9 @@ def calculate_quarterly_income_score(in_df: pd.DataFrame):
     df = in_df.copy()
     df = normalize_columns(df, ['last_revenue', 'revenue_trend', 'cost_expenses_trend'])
     in_df['quarterly_income_score'] = round((
-        df['last_revenue'] * 0.1 +
-        df['revenue_trend'] * 0.6 -
-        df['cost_expenses_trend'] * 0.3  # Penalty for expenses trend
+        df['revenue_change'] * 0.2 +
+        df['revenue_trend'] * 0.5 -
+        df['cost_expenses_trend'] * 0.2  # Penalty for expenses trend
     ), 2)
     return in_df
 
@@ -48,8 +48,8 @@ def calculate_annual_income_score(in_df: pd.DataFrame):
     df = in_df.copy()
     df = normalize_columns(df, ['last_revenue', 'revenue_trend', 'cost_expenses_trend'])
     in_df['annual_income_score'] = round((
-        df['last_revenue'] * 0.1 +
-        df['revenue_trend'] * 0.6 -
+        df['revenue_change'] * 0.4 +
+        df['revenue_trend'] * 0.3 -
         df['cost_expenses_trend'] * 0.3  # Penalty for expenses trend
     ), 2)
     return in_df
@@ -69,8 +69,7 @@ def calculate_quarterly_cashflow_score(in_df: pd.DataFrame):
     df = normalize_columns(df, ['last_operating_cashflow', 'free_cashflow_trend', 'capital_expenditure_trend',
                                 'cash_runway'])
     in_df['quarterly_cashflow_score'] = round((
-        df['last_operating_cashflow'] * 0.2 +  # High weight on cash flow
-        df['free_cashflow_trend'] * 0.2 +  # Moderate weight on cash flow trend
+        df['free_cashflow_trend'] * 0.4 +  # Moderate weight on cash flow trend
         df['cash_runway'] * 0.4 -  # Emphasis on runway
         df['capital_expenditure_trend'] * 0.2  # Penalize high capital expenditure trend
     ), 2)
@@ -81,9 +80,8 @@ def calculate_inst_own_score(in_df: pd.DataFrame):
     df = in_df.copy()
     df = normalize_columns(df, ['investors_holding', 'investors_holding_change', 'investors_put_call_ratio'])
     in_df['inst_own_score'] = round((
-        df['investors_holding'] * 0.5 +  # Emphasis on institutional holding
-        df['investors_holding_change'] * 0.3 -  # Moderate weight on change
-        df['investors_put_call_ratio'] * 0.2  # Penalty for high put-call ratio
+        df['investors_holding'] * 0.5 -  # Emphasis on institutional holding
+        df['investors_put_call_ratio'] * 0.5  # Penalty for high put-call ratio
     ), 2)
     return in_df
 
@@ -93,8 +91,6 @@ def calculate_final_score(ratios_df, quarterly_income_df, annual_income_df,
                           inst_own_df=None):
     scores_df = ratios_df[['symbol', 'ratios_score']].merge(
         quarterly_income_df[['symbol', 'quarterly_income_score']], on='symbol', how='outer'
-    ).merge(
-        annual_income_df[['symbol', 'annual_income_score']], on='symbol', how='outer'
     ).merge(
         quarterly_balance_sheet_df[['symbol', 'quarterly_balance_sheet_score']], on='symbol', how='outer'
     ).merge(
@@ -112,7 +108,6 @@ def calculate_final_score(ratios_df, quarterly_income_df, annual_income_df,
     # Final score calculation
     scores_df['final_score'] = round((scores_df['ratios_score'] * 0.2 +
                                      scores_df['quarterly_income_score'] * 0.3 +
-                                     scores_df['annual_income_score'] * 0.1 +
                                      scores_df['quarterly_balance_sheet_score'] * 0.1 +
                                      scores_df['quarterly_cashflow_score'] * 0.2 +
                                      scores_df['inst_own_score'] * 0.1), 2)
@@ -214,8 +209,8 @@ class PennyStockFinder:
                               'debtEquityRatioTTM', 'interestCoverageTTM']
         ratios_df = pd.DataFrame(ratios_list, columns=ratios_column_list)
 
-        income_column_list = ['symbol', 'last_revenue', 'last_net_income', 'last_cost_expenses', 'revenue_trend',
-                              'net_income_trend', 'cost_expenses_trend']
+        income_column_list = ['symbol', 'last_revenue', 'revenue_change', 'last_net_income', 'last_cost_expenses',
+                              'revenue_trend', 'net_income_trend', 'cost_expenses_trend']
         quarterly_income_df = pd.DataFrame(quarterly_income_stats_list, columns=income_column_list)
         annual_income_df = pd.DataFrame(annual_income_stats_list, columns=income_column_list)
 

@@ -3,7 +3,14 @@ from datetime import datetime
 import os
 import sys
 from config import *
+from enum import Enum
 
+
+class LogLevel(Enum):
+    DEBUG = 1
+    INFO = 2
+    WARNING = 3
+    ERROR = 4
 
 #  Set log level
 LOG_LEVEL = LogLevel.DEBUG

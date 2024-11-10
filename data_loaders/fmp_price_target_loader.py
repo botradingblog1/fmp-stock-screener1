@@ -15,6 +15,7 @@ class FmpPriceTargetLoader:
     def load(self, symbol: str, lookback_days: int = 60):
         result = {
                 'symbol': symbol,
+                'avg_target_price': 0,
                 'avg_price_target_change_percent': 0,
                 'price_target_coefficient_variation': 0,
                 'price_target_agreement_ratio': 0,
@@ -43,6 +44,7 @@ class FmpPriceTargetLoader:
         price_target_df = price_target_df.sort_values(by='publishedDate')
 
         # Calculate percentage change in adjusted price targets relative to the current price
+        avg_price_target = price_target_df['adjPriceTarget'].mean()
         price_target_df['priceTargetChangePercent'] = (price_target_df['adjPriceTarget'] - price_target_df['priceWhenPosted']) / price_target_df['priceWhenPosted'] * 100
 
         # Calculate average price target percentage change
@@ -65,6 +67,7 @@ class FmpPriceTargetLoader:
         num_price_target_analysts = len(price_target_df)
 
         # Update results
+        result['avg_price_target'] = round(avg_price_target, 2)
         result['avg_price_target_change_percent'] = round(avg_price_target_change_percent, 2)
         result['price_target_coefficient_variation'] = round(price_target_coefficient_variation, 2)
         result['price_target_agreement_ratio'] = round(price_target_agreement_ratio, 2)

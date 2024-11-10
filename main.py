@@ -16,6 +16,7 @@ from analysis_tools.value_stock_candidate_finder import ValueStockCandidateFinde
 from analysis_tools.profile_builder import ProfileBuilder
 from analysis_tools.market_segment_growth_candidate_finder import MarketSegmentGrowthCandidateFinder
 from analysis_tools.news_catalyst_finder import NewsCatalystFinder
+from analysis_tools.market_player_stats_fetcher import MarketLeaderStatsFetcher
 import schedule
 import time
 
@@ -23,6 +24,11 @@ import time
 # Get API key from environment variables
 FMP_API_KEY = get_os_variable('FMP_API_KEY')
 TIINGO_API_KEY = get_os_variable('TIINGO_API_KEY')
+
+
+def run_market_leader_stats_fetcher():
+    fetcher = MarketLeaderStatsFetcher(fmp_api_key=FMP_API_KEY)
+    fetcher.fetch_stats()
 
 
 def run_market_segment_growth_stock_finder():
@@ -123,10 +129,11 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
+    #run_market_leader_stats_fetcher()
     #run_market_segment_growth_stock_finder()
     #run_penny_stock_finder()
     #run_overvalued_stock_finder()
-    run_value_stock_finder()
+    #run_value_stock_finder()
     #run_etf_performance_screener()
     #run_inst_own_candidate_finder()
     #run_trend_pullback_finder()
