@@ -16,6 +16,7 @@ from utils.log_utils import *
 CANDIDATES_DIR = "C:\\dev\\trading\\data\\price_target\\candidates"
 CANDIDATES_FILE_NAME = "price_target_candidates.csv"
 
+
 class PriceTargetCandidateFinder:
     def __init__(self, fmp_api_key):
         self.symbol_loader = MarketSymbolLoader()
@@ -49,8 +50,9 @@ class PriceTargetCandidateFinder:
         symbol_list = fifty_two_week_low_df['symbol'].unique()
 
         # Fetch price targets
-        price_targets_df = self.fmp_price_target_loader.load(symbol_list, prices_dict, lookback_days=60)
+        price_targets_df = self.fmp_price_target_loader.load_list(symbol_list, lookback_days=60)
         if price_targets_df is not None and not price_targets_df.empty:
+            price_targets_df.dropna(subset=['avg_price_target'], how='all', inplace=True)
             merged_df = pd.merge(fifty_two_week_low_df, price_targets_df, on='symbol', how='inner')
 
         # Fetch quarterly earnings estimates
@@ -82,6 +84,9 @@ class PriceTargetCandidateFinder:
             print("No matching stocks found")
             return None
 
+        # Filter out stocks that have a low number of price target analysis
+        merged_df = merged_df[merged_df['num_price_target_analysts'] >= 3]
+
         # Copy original columns to preserve their values
         original_columns = merged_df.copy()
 
@@ -102,8 +107,8 @@ class PriceTargetCandidateFinder:
 
         # Calculate weighted score using the normalized columns
         merged_df['weighted_score'] = (
-            merged_df['norm_price_drop_percent'] * 0.2 +
-            merged_df['norm_avg_price_target_change_percent'] * 0.4 +
+            merged_df['norm_price_drop_percent'] * 0.1 +
+            merged_df['norm_avg_price_target_change_percent'] * 0.5 +
             merged_df['norm_avg_eps_growth_quarter_percent'] * 0.1 +
             merged_df['norm_avg_eps_growth_annual_percent'] * 0.1 +
             merged_df['norm_analyst_rating_score'] * 0.2
@@ -122,5 +127,6 @@ class PriceTargetCandidateFinder:
         os.makedirs(CANDIDATES_DIR, exist_ok=True)
         path = os.path.join(CANDIDATES_DIR, CANDIDATES_FILE_NAME)
         final_df.to_csv(path, index=False)
+        logi(f"Price target results saved to {path}")
 
         return final_df

@@ -81,4 +81,7 @@ class FmpPriceTargetLoader:
             result = self.load(symbol, lookback_days)
             results.append(result)
 
-        return results
+        # Convert to dataframe
+        results_df = pd.DataFrame(results)
+
+        return results_df

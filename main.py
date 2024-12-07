@@ -17,6 +17,7 @@ from analysis_tools.profile_builder import ProfileBuilder
 from analysis_tools.market_segment_growth_candidate_finder import MarketSegmentGrowthCandidateFinder
 from analysis_tools.news_catalyst_finder import NewsCatalystFinder
 from analysis_tools.market_player_stats_fetcher import MarketLeaderStatsFetcher
+from analysis_tools.estimated_growth_candidate_finder import  EstimatedGrowthCandidateFinder
 import schedule
 import time
 
@@ -104,6 +105,11 @@ def run_highest_return_finder():
     finder.find_candidates()
 
 
+def run_estimated_growth_candidate_finder():
+    finder = EstimatedGrowthCandidateFinder(FMP_API_KEY)
+    finder.find_candidates()
+
+
 def perform_cleanup():
     # Cleanup log file to avoid excessive growth
     delete_file(CACHE_DIR, LOG_FILE_NAME)
@@ -129,6 +135,8 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
+    run_price_target_candidate_finder()
+    #run_estimated_growth_candidate_finder()
     #run_market_leader_stats_fetcher()
     #run_market_segment_growth_stock_finder()
     #run_penny_stock_finder()
@@ -138,7 +146,7 @@ if __name__ == "__main__":
     #run_inst_own_candidate_finder()
     #run_trend_pullback_finder()
     #run_news_catalyst_finder()
-    #run_price_target_candidate_finder()
+
     #run_analyst_ratings_candidate_finder()
     #run_news_catalyst_finder()
     #run_deep_discount_growth_screener()

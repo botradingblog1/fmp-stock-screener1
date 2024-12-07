@@ -15,6 +15,38 @@ def calculate_trend_linear_regression(values: list):
     return trend
 
 
+def compute_slope(df: pd.DataFrame, target_col: str, slope_col: str, window_size: int) -> pd.DataFrame:
+    """
+    Computes the slope of a time series for the specified target column and adds it as a new column.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame containing the data.
+        target_col (str): The name of the column containing the target price data.
+        slope_col (str): The name of the column to store the computed slopes.
+        window_size (int): The rolling window size to compute the slopes.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the computed slopes added as a new column.
+    """
+
+    def compute_slope_internal(y_values):
+        x_values = np.arange(len(y_values))
+        m, _ = np.polyfit(x_values, y_values, 1)
+        return m
+
+    # Ensure the target column exists in the DataFrame
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' does not exist in the DataFrame.")
+
+    # Make a copy of the DataFrame to avoid SettingWithCopyWarning
+    df = df.copy()
+
+    # Compute the rolling slope and add it as a new column
+    df.loc[:, slope_col] = df[target_col].rolling(window=window_size).apply(compute_slope_internal, raw=True)
+
+    return df
+
+
 def calculate_trend(df: pd.DataFrame, bandwidth: int = 9):
     # Add smoothed line
     df = add_kernel_reg_smoothed_line(df, column_list=['close'], bandwidth=bandwidth, var_type='c')
