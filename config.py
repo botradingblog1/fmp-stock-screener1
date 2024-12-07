@@ -4,17 +4,27 @@ from enums import *
 # Define directory paths
 CACHE_DIR = 'cache'
 RESULTS_DIR = 'results'
+REPORTS_DIR = 'reports'
+TEMPLATE_DIR = 'templates'
 LOG_DIR = 'logs'
 LOG_FILE_NAME = "stock-screener1-log.txt"
 
-# Variables for coarse selection
+# File names
+ANALYST_RATINGS_RESULTS_FILE_NAME = "analyst_ratings_results.csv"
+PRICE_TARGET_RESULTS_FILE_NAME = "price_target_results.csv"
+INST_OWN_RESULTS_FILE_NAME = "institutional_ownership_results.csv"
+
+# EDGAR config
+EDGAR_IDENTITY = "Chris S. - botradingblog@gmail.com"
+
+# Stock screener config
 EXCHANGE_LIST = "nyse,nasdaq,amex"
-MIN_MARKET_CAP = 2000000000  # billion
-MIN_PRICE = 10  # dollars
-MAX_BETA = 1.6
-MIN_VOLUME = 100000  # Average daily trading volume
-COUNTRY = 'US'
-STOCK_LIST_LIMIT = 3000
+PRICE_MORE_THAN = 1.0  # Don't wanna trade below a buck
+PRICE_LESS_THAN = 1000.0  # Am I Buffett, or what???
+MARKET_CAP_LOWER_THAN = 5 * 1000000000  # Upper limit: Small/Medium cap companies
+VOLUME_MORE_THAN = 5000  # Need a bit of liquidity to trade
+COUNTRY = "US"
+STOCK_SCREENER_LIMIT = 3000
 
 # Config variables
 DAILY_DATA_FETCH_PERIODS = 500

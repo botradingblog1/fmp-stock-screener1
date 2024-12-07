@@ -1,0 +1,27 @@
+<h2>Institutional Ownership</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Investors Holding</th>
+            <th>Investors Holding Change (%)</th>
+            <th>Ownership Percent</th>
+            <th>Ownership Percent Change (%)</th>
+            <th>Put Call Ratio</th>
+            <th>Put Call Ratio Change (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for inst_own in institutional_ownership_data %}
+        <tr>
+            <td>{{ inst_own.date | default('N/A') }}</td>
+            <td>{{ "{:,}".format(inst_own.investorsHolding | default(0)) }}</td>
+            <td>{{ "{:,}".format(inst_own.investorsHoldingChange | default(0)) }}</td>
+            <td>{{ "{:,}".format(inst_own.ownershipPercent | default(0)) }}</td>
+            <td>{{ "{:,}".format(inst_own.ownershipPercentChange | default(0)) }}</td>
+            <td>{{ "{:,}".format(inst_own.putCallRatio | default(0)) }}</td>
+            <td>{{ "{:,}".format(inst_own.putCallRatioChange | default(0)) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -1,0 +1,31 @@
+<div class="container mt-5">
+    <h1>Analyst Ratings</h1>
+
+    <!-- Grades Count Table -->
+    <h2>Aggregate Analyst Ratings Count</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Strong Buy</th>
+                <th>Buy</th>
+                <th>Hold</th>
+                <th>Sell</th>
+                <th>Strong Sell</th>
+                <th>Bullish Count</th>
+                <th>Bearish Count</th>
+                <th>Total Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ grade_stats_dict.strong_buy_count }}</td>
+                <td>{{ grade_stats_dict.buy_count }}</td>
+                <td>{{ grade_stats_dict.hold_count }}</td>
+                <td>{{ grade_stats_dict.sell_count }}</td>
+                <td>{{ grade_stats_dict.strong_sell_count }}</td>
+                <td>{{ grade_stats_dict.bullish_count }}</td>
+                <td>{{ grade_stats_dict.bearish_count }}</td>
+                <td>{{ grade_stats_dict.total_rating }}</td>
+            </tr>
+        </tbody>
+    </table>

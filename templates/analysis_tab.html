@@ -1,0 +1,57 @@
+<h2>Analysis</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Message</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>Ratios</b></td>
+                <td>{{ analysis_results.ratio_analysis_message }}</td>
+                <td>{{ analysis_results.ratio_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Analyst Ratings</b></td>
+                <td>{{ analysis_results.analyst_ratings_message }}</td>
+                <td>{{ analysis_results.analyst_ratings_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Price Targets</b></td>
+                <td>{{ analysis_results.price_target_message }}</td>
+                <td>{{ analysis_results.price_target_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Quarterly Revenue Estimate</b></td>
+                <td>{{ analysis_results.quarterly_estimate_message }}</td>
+                <td>{{ analysis_results.quarterly_estimate_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Annual Revenue Estimate</b></td>
+                <td>{{ analysis_results.annual_estimate_message }}</td>
+                <td>{{ analysis_results.annual_estimate_score }}</td>
+            </tr>
+             <tr>
+                <td><b>Institutional Ownership</b></td>
+                <td>{{ analysis_results.inst_own_message }}</td>
+                <td>{{ analysis_results.inst_own_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Income</b></td>
+                <td>{{ analysis_results.income_message }}</td>
+                <td>{{ analysis_results.income_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Balance Sheet</b></td>
+                <td>{{ analysis_results.balance_sheet_message }}</td>
+                <td>{{ analysis_results.balance_sheet_score }}</td>
+            </tr>
+            <tr>
+                <td><b>Cash Flowt</b></td>
+                <td>{{ analysis_results.cash_flow_message }}</td>
+                <td>{{ analysis_results.cash_flow_score }}</td>
+            </tr>
+        </tbody>
+    </table>

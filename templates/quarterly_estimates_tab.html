@@ -1,0 +1,47 @@
+<div class="container mt-5">
+    <h1>Quarterly Revenue Estimates</h1>
+
+    <!-- Summary Table -->
+    <h2>Quarterly Revenue Estimate Summary</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Average Estimated Revenue Change (%)</th>
+                <th>Estimated Revenue Coefficient of Variation</th>
+                <th>Avg. Number of Analysts</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ quarterly_estimate_stats.avg_revenue_change_percent }}%</td>
+                <td>{{ quarterly_estimate_stats.price_target_coefficient_variation }}</td>
+                <td>{{ quarterly_estimate_stats.avg_num_analysts }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Detailed Analyst Estimate Information -->
+    <h2>Detailed Analyst Estimate Information</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Date</th>
+                <th>Avg. Estimated Revenue</th>
+                <th>Avg. Estimated Net Income</th>
+                <th>Number of Analysts</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in quarterly_estimate_details %}
+            <tr>
+                <td>{{ entry.symbol }}</td>
+                <td>{{ entry.date }}</td>
+                <td>{{ '{:,.0f}'.format(entry.estimatedRevenueAvg) }}</td>
+                <td>{{ '{:,.0f}'.format(entry.estimatedNetIncomeAvg) }}</td>
+                <td>{{ entry.numberAnalystEstimatedRevenue }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

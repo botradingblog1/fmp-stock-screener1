@@ -10,6 +10,10 @@ scikit-learn
 schedule
 empyrical
 nltk
+jinja2
+edgartools
 openpyxl
+openai
+ollama
 kaleido==0.1.0.post1
 botrading==1.0.0

@@ -60,15 +60,14 @@ class FmpAnalystRatingsLoader:
         })
         return grades_count_df
 
-    def fetch(self, symbol_list, num_lookback_days=60):
+    def load(self, symbol_list, num_lookback_days=60):
         #  Fetch all symbols
         symbols = symbol_list
         #  Iterate through symbols
         i = 1
         results_df = pd.DataFrame({})
         for symbol in symbols:
-            logd(f"Loading analyst ratings for {symbol}... ({i}/{len(symbol_list)})")
-
+            #logd(f"Loading analyst ratings for {symbol}... ({i}/{len(symbol_list)})")
             today_str = datetime.today().strftime("%Y-%m-%d")
             file_name = f"{symbol}_{today_str}_analyst_ratings.csv"
             path = os.path.join(ANALYST_RATINGS_CACHE_DIR, file_name)

@@ -1,0 +1,29 @@
+<h2>Annual Balance Sheet</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Total Assets</th>
+            <th>Total Liabilities</th>
+            <th>Total Equity</th>
+            <th>Cash & Equivalents</th>
+            <th>Accounts Receivable</th>
+            <th>Inventory</th>
+            <!-- Add more columns as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for balance in balance_sheet_annual %}
+        <tr>
+            <td>{{ balance.date | default('N/A') }}</td>
+            <td>{{ "{:,}".format(balance.totalAssets | default(0)) }}</td>
+            <td>{{ "{:,}".format(balance.totalLiabilities | default(0)) }}</td>
+            <td>{{ "{:,}".format(balance.totalEquity | default(0)) }}</td>
+            <td>{{ "{:,}".format(balance.cashAndCashEquivalents | default(0)) }}</td>
+            <td>{{ "{:,}".format(balance.netReceivables | default(0)) }}</td>
+            <td>{{ "{:,}".format(balance.inventory | default(0)) }}</td>
+            <!-- Add more data as needed -->
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

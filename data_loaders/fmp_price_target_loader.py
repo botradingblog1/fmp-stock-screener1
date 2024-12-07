@@ -72,7 +72,12 @@ class FmpPriceTargetLoader:
         result['price_target_coefficient_variation'] = round(price_target_coefficient_variation, 2)
         result['price_target_agreement_ratio'] = round(price_target_agreement_ratio, 2)
         result['num_price_target_analysts'] = round(num_price_target_analysts, 2)
-        return result
+
+        results_df = pd.DataFrame([result])
+
+        results_df.fillna(value=0, inplace=True)
+
+        return results_df
 
     def load_list(self, symbol_list: list, lookback_days=60):
         results = []

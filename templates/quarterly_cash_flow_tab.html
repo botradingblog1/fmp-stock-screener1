@@ -1,0 +1,37 @@
+<h2>Quarterly Cash Flow</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Net Income</th>
+            <th>Depreciation & Amortization</th>
+            <th>Change in Working Capital</th>
+            <th>Operating Cash Flow</th>
+            <th>Capital Expenditure (CapEx)</th>
+            <th>Free Cash Flow</th>
+            <th>Net Cash from Investing</th>
+            <th>Net Cash from Financing</th>
+            <th>Net Change in Cash</th>
+            <th>Cash at Beginning of Period</th>
+            <th>Cash at End of Period</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cash_flow in cash_flow_quarterly %}
+        <tr>
+            <td>{{ cash_flow.date | default('N/A') }}</td>
+            <td>{{ "{:,}".format(cash_flow.netIncome | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.depreciationAndAmortization | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.changeInWorkingCapital | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.operatingCashFlow | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.capitalExpenditure | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.freeCashFlow | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.netCashUsedForInvestingActivites | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.netCashUsedProvidedByFinancingActivities | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.netChangeInCash | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.cashAtBeginningOfPeriod | default(0)) }}</td>
+            <td>{{ "{:,}".format(cash_flow.cashAtEndOfPeriod | default(0)) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

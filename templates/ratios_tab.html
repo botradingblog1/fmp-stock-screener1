@@ -1,0 +1,67 @@
+<div class="container mt-5">
+    <h2>Key Ratios</h2>
+
+    <!-- Ratios Table -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Ratio</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Price-to-Earnings (P/E) Ratio</td>
+                <td>{{ "{:.2f}".format(ratios.peRatioTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Price-to-Book (P/B) Ratio</td>
+                <td>{{ "{:.2f}".format(ratios.priceToBookRatioTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Price-to-Sales (P/S) Ratio</td>
+                <td>{{ "{:.2f}".format(ratios.priceSalesRatioTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Gross Profit Margin</td>
+                <td>{{ "{:.2%}".format(ratios.grossProfitMarginTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Operating Profit Margin</td>
+                <td>{{ "{:.2%}".format(ratios.operatingProfitMarginTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Net Profit Margin</td>
+                <td>{{ "{:.2%}".format(ratios.netProfitMarginTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Current Ratio</td>
+                <td>{{ "{:.2f}".format(ratios.currentRatioTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Quick Ratio</td>
+                <td>{{ "{:.2f}".format(ratios.quickRatioTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Debt-to-Equity Ratio</td>
+                <td>{{ "{:.2f}".format(ratios.debtEquityRatioTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Return on Equity (ROE)</td>
+                <td>{{ "{:.2%}".format(ratios.returnOnEquityTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Return on Assets (ROA)</td>
+                <td>{{ "{:.2%}".format(ratios.returnOnAssetsTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Free Cash Flow Per Share</td>
+                <td>{{ "{:.2f}".format(ratios.freeCashFlowPerShareTTM) }}</td>
+            </tr>
+            <tr>
+                <td>Operating Cash Flow Per Share</td>
+                <td>{{ "{:.2f}".format(ratios.operatingCashFlowPerShareTTM) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

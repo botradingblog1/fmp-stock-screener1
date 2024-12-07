@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ company_name }} - Company Profile Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>{{ company_name }} - Company Profile Report</h1>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="reportTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Profile</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button" role="tab">News</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="press-releases-tab" data-bs-toggle="tab" data-bs-target="#press-releases" type="button" role="tab">Press Releases</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="latest-filing-tab" data-bs-toggle="tab" data-bs-target="#latest-filing" type="button" role="tab">Latest Filing</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="ratios-tab" data-bs-toggle="tab" data-bs-target="#ratios" type="button" role="tab">Ratios</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="analyst-ratings-tab" data-bs-toggle="tab" data-bs-target="#analyst-ratings" type="button" role="tab">Analyst Ratings</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="price-targets-tab" data-bs-toggle="tab" data-bs-target="#price-targets" type="button" role="tab">Price Targets</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="quarterly-estimates-tab" data-bs-toggle="tab" data-bs-target="#quarterly-estimates" type="button" role="tab">Quarterly Estimates</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="annual-estimates-tab" data-bs-toggle="tab" data-bs-target="#annual-estimates" type="button" role="tab">Annual Estimates</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="institutional-ownership-tab" data-bs-toggle="tab" data-bs-target="#institutional-ownership" type="button" role="tab">Institutional Ownership</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="quarterly-income-tab" data-bs-toggle="tab" data-bs-target="#quarterly-income" type="button" role="tab">Quarterly Income</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="annual-income-tab" data-bs-toggle="tab" data-bs-target="#annual-income" type="button" role="tab">Annual Income</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="quarterly-balance-sheet-tab" data-bs-toggle="tab" data-bs-target="#quarterly-balance-sheet" type="button" role="tab">Quarterly Balance Sheet</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="annual-balance-sheet-tab" data-bs-toggle="tab" data-bs-target="#annual-balance-sheet" type="button" role="tab">Annual Balance Sheet</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="quarterly-cash-flow-tab" data-bs-toggle="tab" data-bs-target="#quarterly-cash-flow" type="button" role="tab">Quarterly Cash Flow</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="annual-cash-flow-tab" data-bs-toggle="tab" data-bs-target="#annual-cash-flow" type="button" role="tab">Annual Cash Flow</button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content mt-3">
+        <!-- Profile Tab -->
+        <div class="tab-pane fade show active" id="profile" role="tabpanel">
+            {% include 'profile_tab.html' %}
+        </div>
+        <!-- News Tab -->
+        <div class="tab-pane fade" id="news" role="tabpanel">
+            {% include 'news_tab.html' %}
+        </div>
+        <div class="tab-pane fade" id="press-releases" role="tabpanel">
+            {% include 'press_releases_tab.html' %}
+        </div>
+        <div class="tab-pane fade" id="latest-filing" role="tabpanel">
+            {% include 'latest_filing_tab.html' %}
+        </div>
+        <!-- Ratios Tab -->
+        <div class="tab-pane fade" id="ratios" role="tabpanel">
+            {% include 'ratios_tab.html' %}
+        </div>
+         <!-- Analyst Ratings Tab -->
+        <div class="tab-pane fade" id="analyst-ratings" role="tabpanel">
+            {% include 'analyst_ratings_tab.html' %}
+        </div>
+        <!-- Price Target Tab -->
+        <div class="tab-pane fade" id="price-targets" role="tabpanel">
+            {% include 'price_target_tab.html' %}
+        </div>
+        <!-- Quarterly Revenue Estimates Tab -->
+        <div class="tab-pane fade" id="quarterly-estimates" role="tabpanel">
+            {% include 'quarterly_estimates_tab.html' %}
+        </div>
+        <!-- Annual Revenue Estimates Tab -->
+        <div class="tab-pane fade" id="annual-estimates" role="tabpanel">
+            {% include 'annual_estimates_tab.html' %}
+        </div>
+        <!-- Institutional Ownership Tab -->
+        <div class="tab-pane fade" id="institutional-ownership" role="tabpanel">
+            {% include 'institutional_ownership_tab.html' %}
+        </div>
+        <!-- Quarterly Income Tab -->
+        <div class="tab-pane fade" id="quarterly-income" role="tabpanel">
+            {% include 'quarterly_income_tab.html' %}
+        </div>
+        <!-- Annual Income Tab -->
+        <div class="tab-pane fade" id="annual-income" role="tabpanel">
+            {% include 'annual_income_tab.html' %}
+        </div>
+        <!-- Quarterly Balance Sheet Tab -->
+        <div class="tab-pane fade" id="quarterly-balance-sheet" role="tabpanel">
+            {% include 'quarterly_balance_sheet_tab.html' %}
+        </div>
+        <!-- Annual Balance Sheet Tab -->
+        <div class="tab-pane fade" id="annual-balance-sheet" role="tabpanel">
+            {% include 'annual_balance_sheet_tab.html' %}
+        </div>
+        <!-- Quarterly Cash Flow Tab -->
+        <div class="tab-pane fade" id="quarterly-cash-flow" role="tabpanel">
+            {% include 'quarterly_cash_flow_tab.html' %}
+        </div>
+        <!-- Annual Cash Flow Tab -->
+        <div class="tab-pane fade" id="annual-cash-flow" role="tabpanel">
+            {% include 'annual_cash_flow_tab.html' %}
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

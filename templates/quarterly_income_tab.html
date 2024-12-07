@@ -1,0 +1,23 @@
+<h2>Quarterly Income Statements</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Revenue</th>
+            <th>Net Income</th>
+            <th>EPS</th>
+            <!-- Add more columns as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for income in income_quarterly %}
+        <tr>
+            <td>{{ income.date }}</td>
+            <td>{{ "{:,}".format(income.revenue) }}</td>
+            <td>{{ "{:,}".format(income.netIncome) }}</td>
+            <td>{{ income.eps }}</td>
+            <!-- Add more data as needed -->
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

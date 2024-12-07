@@ -1,8 +1,6 @@
 import pandas as pd
 from utils.log_utils import *
 from datetime import datetime, timedelta
-from screeners.growth_screener1 import GrowthScreener1
-
 
 """
  Calculated 52-week high and filters by minimum drop

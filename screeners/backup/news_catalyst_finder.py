@@ -1,15 +1,12 @@
-import os
 import re
 import nltk
 import gensim
-import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from botrading.data_loaders.tiingo_data_loader import TiingoDataLoader
-from analysis_tools.news_sentiment_detector import NewsSentimentDetector
+from screeners.backup.news_sentiment_detector import NewsSentimentDetector
 from utils.log_utils import *
 from utils.file_utils import *
-from botrading.utils.string_utils import create_md5_hash
 from datetime import timedelta, time
 
 

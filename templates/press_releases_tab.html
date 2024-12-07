@@ -1,0 +1,14 @@
+<h2>Press Releases</h2>
+
+{% for item in press_release_data %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">{{ item.title }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{ item.publishedDate }} | {{ item.site }}</h6>
+        <p class="card-text">{{ item.text }}</p>
+        <a href="{{ item.url }}" class="card-link" target="_blank">Read more</a>
+    </div>
+</div>
+{% else %}
+<p>No press releases available.</p>
+{% endfor %}
