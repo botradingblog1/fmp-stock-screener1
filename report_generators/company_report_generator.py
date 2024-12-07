@@ -79,8 +79,8 @@ class CompanyReportGenerator:
 
         # Fetch price targets
         price_target_stats = {}
-        price_target_stats_df = self.fmp_price_target_loader.load(symbol, lookback_days=60)
-        if price_target_stats_df is not None and len(price_target_stats_df) == 0:
+        price_target_stats_df = self.fmp_price_target_loader.load(symbol, lookback_days=90)
+        if price_target_stats_df is not None and len(price_target_stats_df) >= 0:
             price_target_stats = price_target_stats_df.to_dict(orient='records')
 
         # Fetch quarterly analyst estimates
@@ -99,7 +99,7 @@ class CompanyReportGenerator:
         inst_own_df = self.fmp_data_loader.fetch_institutional_ownership_changes(symbol, cache_data=True,
                                                                                  cache_dir=CACHE_DIR)
         institutional_ownership_data = {}
-        if inst_own_df is not None and len(inst_own_df) == 0:
+        if inst_own_df is not None and len(inst_own_df) > 0:
             institutional_ownership_df = inst_own_df.head(3)
             institutional_ownership_data = institutional_ownership_df.to_dict(orient='records')
 

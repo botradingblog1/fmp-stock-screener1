@@ -1,5 +1,5 @@
 from utils.file_utils import *
-from utils.file_utils import get_os_variable
+from utils.file_utils import get_os_variable, delete_files_in_directory
 from utils.log_utils import *
 from universe_selection.universe_selector import UniverseSelector
 from screeners.analyst_ratings_screener import AnalystRatingsScreener
@@ -44,11 +44,14 @@ if __name__ == "__main__":
     create_output_directories()
     setup_logger(LOG_FILE_NAME)
 
+    # Clean reports
+    delete_files_in_directory(REPORTS_DIR)
+
     # Universe selection
     universe_selector = UniverseSelector(FMP_API_KEY)
     universe_selector.perform_selection()
     symbol_list = universe_selector.get_symbol_list()
-    #symbol_list = symbol_list[0:20]
+    symbol_list = symbol_list[0:10]
 
     # Run analyst ratings screener
     analyst_ratings_screener = AnalystRatingsScreener(FMP_API_KEY)

@@ -25,7 +25,7 @@ class InstitutionalOwnershipScreener:
             combined_stats_df = pd.concat([combined_stats_df, inst_own_stats_df], axis=0, ignore_index=True)
 
         # Sort by total ratings
-        combined_stats_df.sort_values(by=['institutional_investor_score'], ascending=[False])
+        combined_stats_df.sort_values(by=['institutional_investor_score'], ascending=[False], inplace=True)
 
         # Store results
         store_csv(RESULTS_DIR, INST_OWN_RESULTS_FILE_NAME, combined_stats_df)

@@ -35,7 +35,7 @@ class AnalystRatingsScreener:
         combined_grades_df = combined_grades_df[combined_grades_df['total_ratings_count'] >= min_ratings_count]
 
         # Sort by total buy ratings
-        combined_grades_df.sort_values(by=['total_grades_rating'], ascending=[False])
+        combined_grades_df.sort_values(by=['total_grades_rating'], ascending=[False], inplace=True)
 
         # Store results
         store_csv(RESULTS_DIR, ANALYST_RATINGS_RESULTS_FILE_NAME, combined_grades_df)

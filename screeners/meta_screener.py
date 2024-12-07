@@ -110,9 +110,9 @@ class MetaScreener:
         # Merge all results
         if results:
             merged_df = pd.concat(results, axis=0, ignore_index=True)
-            print(f"Merged {len(results)} screener results.")
+            #print(f"Merged {len(results)} screener results.")
         else:
-            print("No screener data found. Returning empty DataFrame.")
+            logd("No screener data found. Returning empty DataFrame.")
             merged_df = pd.DataFrame(columns=['symbol', 'screener'])
 
         # Grab detailed stats for combined results
@@ -120,13 +120,8 @@ class MetaScreener:
 
         # Run individual screeners
         analyst_ratings_results_df = self.analyst_ratings_screener.screen_candidates(symbol_list, min_ratings_count=3)
-        analyst_ratings_results_df['screener'] = 'analyst_ratings'
-
         price_target_results_df = self.price_target_screener.screen_candidates(symbol_list, min_ratings_count=3)
-        price_target_results_df['screener'] = 'price_target'
-
         inst_own_results_df = self.inst_own_screener.screen_candidates(symbol_list)
-        price_target_results_df['screener'] = 'institutional_ownership'
 
         # Merge all detailed results on symbol
         stats_df = merged_df[['symbol']].drop_duplicates()
@@ -139,6 +134,10 @@ class MetaScreener:
 
         # Handle missing values
         stats_df = stats_df.fillna(0)
+
+        # Filter minimums
+        stats_df = stats_df[stats_df['avg_price_target_change_percent'] >= 20.0]
+        stats_df = stats_df[stats_df['investors_put_call_ratio'] < 1.0]
 
         # Adjust pe_ratio (invert it since lower is better)
         #merged_df['inv_pe_ratio'] = merged_df['pe_ratio'].replace(0, np.nan)
@@ -160,8 +159,8 @@ class MetaScreener:
 
         # Calculate weighted score using the normalized columns
         stats_df['weighted_score'] = (
-            stats_df['norm_total_grades_rating'] * 0.4 +
-            stats_df['norm_avg_price_target_change_percent'] * 0.4 +
+            stats_df['norm_avg_price_target_change_percent'] * 0.6 +
+            stats_df['norm_total_grades_rating'] * 0.2 +
             stats_df['institutional_investor_score'] * 0.2
         )
 
@@ -176,18 +175,12 @@ class MetaScreener:
         stats_df.reset_index(drop=True, inplace=True)
 
         # Pick top stocks
-        final_stats_df = stats_df.head(20)
-        
-        # Perform ChatGPT eval
-        #final_stats_df = self.perform_chatgpt_eval(stats_df)
-
-        # Sort by ChatGPT rank
-        #final_stats_df = final_stats_df.sort_values(by='chatgpt_rank', ascending=False)
+        stats_df = stats_df.head(40)
 
         # Store results
         file_name = f"meta_screener_results.csv"
-        store_csv(RESULTS_DIR, file_name, final_stats_df)
+        store_csv(RESULTS_DIR, file_name, stats_df)
 
-        return final_stats_df
+        return stats_df
 
 

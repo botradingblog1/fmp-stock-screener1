@@ -38,7 +38,7 @@ class PriceTargetScreener:
         combined_stats_df = combined_stats_df[combined_stats_df['num_price_target_analysts'] >= min_ratings_count]
 
         # Sort by total buy ratings
-        combined_stats_df.sort_values(by=['avg_price_target_change_percent'], ascending=[False])
+        combined_stats_df.sort_values(by=['avg_price_target_change_percent'], ascending=[False], inplace=True)
 
         # Store results
         store_csv(RESULTS_DIR, PRICE_TARGET_RESULTS_FILE_NAME, combined_stats_df)

@@ -1,13 +1,15 @@
-<h2>News</h2>
-{% for news_item in news %}
-<div class="card mb-3">
-    <div class="card-body">
-        <h5 class="card-title">{{ news_item.title }}</h5>
-        <h6 class="card-subtitle mb-2 text-muted">{{ news_item.publishedDate }} | {{ news_item.site }}</h6>
-        <p class="card-text">{{ news_item.text }}</p>
-        <a href="{{ news_item.url }}" class="card-link" target="_blank">Read more</a>
+<div class="container mt-5">
+    <h2>News</h2>
+    {% for news_item in news %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ news_item.title }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">{{ news_item.publishedDate }} | {{ news_item.site }}</h6>
+            <p class="card-text">{{ news_item.text }}</p>
+            <a href="{{ news_item.url }}" class="card-link" target="_blank">Read more</a>
+        </div>
     </div>
+    {% else %}
+    <p>No news available.</p>
+    {% endfor %}
 </div>
-{% else %}
-<p>No news available.</p>
-{% endfor %}
