@@ -60,49 +60,39 @@ class FmpAnalystRatingsLoader:
         })
         return grades_count_df
 
-    def load(self, symbol_list, num_lookback_days=60):
-        #  Fetch all symbols
-        symbols = symbol_list
-        #  Iterate through symbols
-        i = 1
+    def load(self, symbol, num_lookback_days=60):
         results_df = pd.DataFrame({})
-        for symbol in symbols:
-            #logd(f"Loading analyst ratings for {symbol}... ({i}/{len(symbol_list)})")
-            today_str = datetime.today().strftime("%Y-%m-%d")
-            file_name = f"{symbol}_{today_str}_analyst_ratings.csv"
-            path = os.path.join(ANALYST_RATINGS_CACHE_DIR, file_name)
-            if os.path.exists(path):
-                # Load from cache
-                grades_df = pd.read_csv(path)
-            else:
-                # Fetch remotely
-                grades_df = self.fmp_client.get_analyst_ratings(symbol)
-                if grades_df is None or len(grades_df) == 0:
-                    logw(f"No grades for {symbol}")
-                    continue
 
-            # Filter out data more than x months in the past
-            cutoff_date = pd.Timestamp.now() - pd.DateOffset(days=num_lookback_days)
-            grades_df = grades_df[(grades_df['date'] >= cutoff_date) & grades_df['date'].notna()]
+        today_str = datetime.today().strftime("%Y-%m-%d")
+        file_name = f"{symbol}_{today_str}_analyst_ratings.csv"
+        path = os.path.join(ANALYST_RATINGS_CACHE_DIR, file_name)
+        if os.path.exists(path):
+            # Load from cache
+            grades_df = pd.read_csv(path)
+        else:
+            # Fetch remotely
+            grades_df = self.fmp_client.get_analyst_ratings(symbol)
+            if grades_df is None or len(grades_df) == 0:
+                logw(f"No grades for {symbol}")
+                return
 
-            # Aggregate counts
-            grades_df = self.aggregate_rating_counts(symbol, grades_df)
+        # Filter out data more than x months in the past
+        cutoff_date = pd.Timestamp.now() - pd.DateOffset(days=num_lookback_days)
+        grades_df = grades_df[(grades_df['date'] >= cutoff_date) & grades_df['date'].notna()]
 
-            # Store grades for review
-            store_csv(CACHE_DIR, f"{symbol}_analyst_ratings.csv", grades_df)
+        # Aggregate counts
+        grades_df = self.aggregate_rating_counts(symbol, grades_df)
 
-            #  Add individual stock results to all results
-            total_rating = grades_df['total_rating'].iloc[0]
-            hold_count = grades_df['hold_count'].iloc[0]
-            bullish_count = grades_df['bullish_count'].iloc[0]
-            bearish_count = grades_df['bearish_count'].iloc[0]
-            row = pd.DataFrame({'symbol': [symbol], 'bullish_count': [bullish_count], 'hold_count': [hold_count],
-                                'bearish_count': [bearish_count], 'analyst_rating_score': [total_rating]})
-            results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
+        # Store grades for review
+        store_csv(CACHE_DIR, f"{symbol}_analyst_ratings.csv", grades_df)
 
-            i += 1
-
-            # Throttle for API limit
-            time.sleep(API_REQUEST_DELAY)
+        #  Add individual stock results to all results
+        total_rating = grades_df['total_rating'].iloc[0]
+        hold_count = grades_df['hold_count'].iloc[0]
+        bullish_count = grades_df['bullish_count'].iloc[0]
+        bearish_count = grades_df['bearish_count'].iloc[0]
+        row = pd.DataFrame({'symbol': [symbol], 'bullish_count': [bullish_count], 'hold_count': [hold_count],
+                            'bearish_count': [bearish_count], 'analyst_rating_score': [total_rating]})
+        results_df = pd.concat([results_df, row], axis=0, ignore_index=True)
 
         return results_df

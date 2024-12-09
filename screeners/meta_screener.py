@@ -89,6 +89,86 @@ class MetaScreener:
 
         return stats_df
 
+    def perform_economic_moat_analysis(self, symbol_list: list):
+        """
+        Analyze economic moat factors for a given company based on its description.
+
+        :param symbol: Stock symbol of the company.
+        :param company_description: Detailed description of the company.
+        :return: DataFrame with economic moat factors, or None if an error occurs.
+        """
+
+        combined_results_df = pd.DataFrame()
+        for symbol in symbol_list:
+            # Fetch company outlook from FMP
+            company_outlook_data = self.fmp_data_loader.fetch_company_outlook(symbol)
+            if not company_outlook_data:
+                loge(f"No data returned for symbol {symbol}")
+                continue
+
+            # Parse sections
+            profile_data = company_outlook_data.get('profile', {})
+            company_description = profile_data.get('description', '')
+            if company_description is None or company_description == '':
+                continue
+
+            role = "Financial Analyst"
+            prompt = (
+                "Using the provided company description and your background knowledge, "
+                "analyze economic moat factors on a scale between 1 and 10. "
+                "The output must be a parsable JSON array in the following format: "
+                "["
+                "{"
+                "\"symbol\": \"<symbol>\", "
+                "\"first_in_class_product\": <1 to 10>, "
+                "\"global_target_market\": <1 to 10>, "
+                "\"platform_solution\": <1 to 10>, "
+                "\"future_growth_markets\": <1 to 10>, "
+                "\"large_income_changes\": <1 to 10>, "
+                "\"network_effects\": <1 to 10>, "
+                "\"high_switching_costs\": <1 to 10>, "
+                "\"increasing_income_streams\": <1 to 10>, "
+                "\"patented_technologies\": <1 to 10>"
+                "}"
+                "] "
+                f"Symbol: {symbol}, Description: {company_description}"
+            )
+
+            try:
+                # Query the OpenAI client for analysis
+                response = self.openai_client.query(prompt, role, cache_data=False, cache_dir=CACHE_DIR)
+
+                # Try to parse the response into JSON
+                response_json = json.loads(response)
+
+                # Validate that the response contains the expected keys
+                required_keys = [
+                    "symbol", "first_in_class_product", "global_target_market",
+                    "platform_solution", "future_growth_markets", "large_income_changes",
+                    "network_effects", "high_switching_costs", "increasing_income_streams",
+                    "patented_technologies"
+                ]
+                missing_key = False
+                for key in required_keys:
+                    if key not in response_json[0]:
+                        logw(f"Missing key '{key}' in the response JSON.")
+                        missing_key = True
+                        break
+                if missing_key:
+                    continue
+                # Convert the parsed JSON into a DataFrame
+                response_df = pd.DataFrame(response_json)
+
+                # Combine results
+                combined_results_df = pd.concat([combined_results_df, response_df], axis=0, ignore_index=True)
+
+            except json.JSONDecodeError as e:
+                loge(f"JSON decoding error: {response}, {str(e)}")
+            except Exception as e:
+                loge(f"Error parsing response: {response}, {str(e)}")
+        return combined_results_df
+
+
     def screen_candidates(self):
         logd(f"MetaScreener.screen_candidates")
         num_top_results = 20
@@ -97,7 +177,7 @@ class MetaScreener:
         screener_configs = [
             (PRICE_TARGET_RESULTS_FILE_NAME, "price_target_screener"),
             (ANALYST_RATINGS_RESULTS_FILE_NAME, "analyst_ratings_screener"),
-            (INST_OWN_RESULTS_FILE_NAME, "inst_own_screener")
+            (ESTIMATED_EPS_FILE_NAME, "estimated_eps_screener")
         ]
 
         # Load and process each screener
@@ -139,10 +219,12 @@ class MetaScreener:
         stats_df = stats_df[stats_df['avg_price_target_change_percent'] >= 20.0]
         stats_df = stats_df[stats_df['investors_put_call_ratio'] < 1.0]
 
-        # Adjust pe_ratio (invert it since lower is better)
-        #merged_df['inv_pe_ratio'] = merged_df['pe_ratio'].replace(0, np.nan)
-        #merged_df['inv_pe_ratio'] = 1 / merged_df['inv_pe_ratio']
-        #merged_df['inv_pe_ratio'] = merged_df['inv_pe_ratio'].replace(np.nan, 0)
+        # Perform economic moat factor analysis
+        symbol_list = stats_df['symbol'].unique()
+        economic_moat_factors_df = self.perform_economic_moat_analysis(symbol_list)
+        if economic_moat_factors_df is not None and len(economic_moat_factors_df) > 0:
+            # merge with stats_df
+            stats_df = stats_df.merge(economic_moat_factors_df, on='symbol', how='left')
 
         # Normalize columns
         columns_to_normalize = [
@@ -174,8 +256,16 @@ class MetaScreener:
         # Reset index
         stats_df.reset_index(drop=True, inplace=True)
 
+        # Pick columns
+        stats_df = stats_df[['symbol', 'strong_buy_count','buy_count','hold_count','avg_price_target_change_percent',
+                             'num_price_target_analysts','investors_holding','investors_holding_change',
+                             'investors_put_call_ratio', 'investors_put_call_ratio_change','weighted_score',
+                             'first_in_class_product','global_target_market','platform_solution',
+                             'future_growth_markets', 'large_income_changes', 'network_effects',
+                             'high_switching_costs','increasing_income_streams', 'patented_technologies']]
+
         # Pick top stocks
-        stats_df = stats_df.head(40)
+        stats_df = stats_df.head(100)
 
         # Store results
         file_name = f"meta_screener_results.csv"

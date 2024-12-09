@@ -4,6 +4,7 @@ from utils.log_utils import *
 from universe_selection.universe_selector import UniverseSelector
 from screeners.analyst_ratings_screener import AnalystRatingsScreener
 from screeners.price_target_screener import PriceTargetScreener
+from screeners.estimated_eps_screener import EstimatedEpsScreener
 from screeners.institutional_ownership_screener import InstitutionalOwnershipScreener
 from screeners.meta_screener import MetaScreener
 from report_generators.company_report_generator import CompanyReportGenerator
@@ -45,13 +46,13 @@ if __name__ == "__main__":
     setup_logger(LOG_FILE_NAME)
 
     # Clean reports
-    delete_files_in_directory(REPORTS_DIR)
+    #delete_files_in_directory(REPORTS_DIR)
 
     # Universe selection
     universe_selector = UniverseSelector(FMP_API_KEY)
     universe_selector.perform_selection()
     symbol_list = universe_selector.get_symbol_list()
-    symbol_list = symbol_list[0:10]
+    #symbol_list = symbol_list[0:20]
 
     # Run analyst ratings screener
     analyst_ratings_screener = AnalystRatingsScreener(FMP_API_KEY)
@@ -60,8 +61,11 @@ if __name__ == "__main__":
     price_target_screener = PriceTargetScreener(FMP_API_KEY)
     price_target_screener.screen_candidates(symbol_list, min_ratings_count=3)
 
-    inst_own_screener = InstitutionalOwnershipScreener(FMP_API_KEY)
-    inst_own_screener.screen_candidates(symbol_list)
+    #inst_own_screener = InstitutionalOwnershipScreener(FMP_API_KEY)
+    #inst_own_screener.screen_candidates(symbol_list)
+
+    estimated_eps_screener = EstimatedEpsScreener(FMP_API_KEY)
+    estimated_eps_screener.screen_candidates(symbol_list)
 
     # Run meta screener
     meta_screener = MetaScreener(FMP_API_KEY, OPENAI_API_KEY)
@@ -77,7 +81,6 @@ if __name__ == "__main__":
     for symbol in symbol_list:
         # Generate report
         report_generator.generate_report(symbol)
-
 
     logd("All done!")
 

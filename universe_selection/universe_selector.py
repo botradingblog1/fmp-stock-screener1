@@ -50,7 +50,8 @@ class UniverseSelector:
             stock_list_df = stock_list_df[~stock_list_df['symbol'].str.contains(r'\.\w{1,4}$')]
 
             # Filter rows where 'industry' is in the preferred industries list
-            #stock_list_df = stock_list_df[stock_list_df['industry'].isin(INDUSTRY_LIST)]
+            stock_list_df = stock_list_df[stock_list_df['industry'].isin(TECH_INDUSTRY_LIST)]
+
             # Store list of stocks
             store_csv(CACHE_DIR, 'stock_list_df.csv', stock_list_df)
 

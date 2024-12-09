@@ -13,6 +13,7 @@ LOG_FILE_NAME = "stock-screener1-log.txt"
 ANALYST_RATINGS_RESULTS_FILE_NAME = "analyst_ratings_results.csv"
 PRICE_TARGET_RESULTS_FILE_NAME = "price_target_results.csv"
 INST_OWN_RESULTS_FILE_NAME = "institutional_ownership_results.csv"
+ESTIMATED_EPS_FILE_NAME = "estimated_eps_results.csv"
 
 # EDGAR config
 EDGAR_IDENTITY = "Chris S. - botradingblog@gmail.com"
@@ -93,3 +94,13 @@ PROFILE = short_term_investment_profile
 PROFILE_NAME = "short_term_profile"
 
 MIN_PRICE_DROP_PERCENT = 0.2  # percent
+
+
+TECH_INDUSTRY_LIST = ['Semiconductors', 'Consumer Electronics' 'Software - Infrastructure',
+'Internet Content & Information','Telecommunications Services',
+'Communication Equipment' 'Information Technology Services',
+'Computer Hardware', 'Electronic Gaming & Multimedia',
+'Renewable Utilities','Solar','Technology Distributors',
+'Internet Software/Services', 'Software - Application']
+
+BIOTECH_INDUSTRY_LIST = ['Biotechnology', 'Medical - Diagnostics & Research']
