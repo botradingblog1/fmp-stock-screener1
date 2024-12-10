@@ -78,10 +78,7 @@ class CompanyReportGenerator:
             grade_stats_dict = grade_stats_df.to_dict(orient='records')
 
         # Fetch price targets
-        price_target_stats = {}
-        price_target_stats_df = self.fmp_price_target_loader.load(symbol, lookback_days=90)
-        if price_target_stats_df is not None and len(price_target_stats_df) >= 0:
-            price_target_stats = price_target_stats_df.to_dict(orient='records')
+        price_target_stats_dict = self.fmp_price_target_loader.load(symbol, lookback_days=90)
 
         # Fetch quarterly analyst estimates
         quarterly_estimates_df, quarterly_estimate_stats = self.fmp_estimates_loader.load(symbol, period="quarter")
@@ -132,7 +129,7 @@ class CompanyReportGenerator:
             'cash_flow_quarterly': quarterly_cash_data,
             'cash_flow_annual': annual_cash_data,
             'grade_stats_dict': grade_stats_dict,
-            'price_target_stats': price_target_stats,
+            'price_target_stats': price_target_stats_dict,
             'quarterly_estimate_stats': quarterly_estimate_stats,
             'quarterly_estimate_details': quarterly_estimate_details,
             'annual_estimate_stats': annual_estimate_stats,
@@ -142,7 +139,7 @@ class CompanyReportGenerator:
 
         return content
 
-    def generate_report(self, symbol: str):
+    def generate_report(self, symbol: str, reports_dir="reports"):
         logd(f"Generating report for {symbol}")
         try:
             # Fetch data
@@ -157,15 +154,15 @@ class CompanyReportGenerator:
             html_content = template.render(content)
 
             # Write the rendered HTML to a final report file
-            self.store_report(symbol, html_content)
+            self.store_report(symbol, reports_dir, html_content)
         except Exception as ex:
             loge(f"Failed to generate report for {symbol}: {str(ex)}")
 
-    def store_report(self, symbol: str, html_content: str):
-        os.makedirs(REPORTS_DIR, exist_ok=True)
-        today_str = datetime.today().strftime("%Y-%m-%d")
+    def store_report(self, symbol: str, reports_dir: str, html_content: str):
+        os.makedirs(reports_dir, exist_ok=True)
+        #today_str = datetime.today().strftime("%Y-%m-%d")
         report_file_name = f"{symbol}_report.html"
-        reports_path = os.path.join(REPORTS_DIR, report_file_name)
+        reports_path = os.path.join(reports_dir, report_file_name)
         with open(reports_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
 

@@ -1,13 +1,9 @@
 from utils.file_utils import *
 from utils.file_utils import get_os_variable, delete_files_in_directory
 from utils.log_utils import *
-from universe_selection.universe_selector import UniverseSelector
-from screeners.analyst_ratings_screener import AnalystRatingsScreener
-from screeners.price_target_screener import PriceTargetScreener
-from screeners.estimated_eps_screener import EstimatedEpsScreener
-from screeners.institutional_ownership_screener import InstitutionalOwnershipScreener
+from screeners.overvalued_biotech_finder import OvervaluedBioTechFinder
+from screeners.one_week_momentum_screener import OneWeekMomentumScreener
 from screeners.meta_screener import MetaScreener
-from report_generators.company_report_generator import CompanyReportGenerator
 import schedule
 import time
 
@@ -48,39 +44,10 @@ if __name__ == "__main__":
     # Clean reports
     #delete_files_in_directory(REPORTS_DIR)
 
-    # Universe selection
-    universe_selector = UniverseSelector(FMP_API_KEY)
-    universe_selector.perform_selection()
-    symbol_list = universe_selector.get_symbol_list()
-    #symbol_list = symbol_list[0:20]
-
-    # Run analyst ratings screener
-    analyst_ratings_screener = AnalystRatingsScreener(FMP_API_KEY)
-    analyst_ratings_results_df = analyst_ratings_screener.screen_candidates(symbol_list, min_ratings_count=3)
-
-    price_target_screener = PriceTargetScreener(FMP_API_KEY)
-    price_target_screener.screen_candidates(symbol_list, min_ratings_count=3)
-
-    #inst_own_screener = InstitutionalOwnershipScreener(FMP_API_KEY)
-    #inst_own_screener.screen_candidates(symbol_list)
-
-    estimated_eps_screener = EstimatedEpsScreener(FMP_API_KEY)
-    estimated_eps_screener.screen_candidates(symbol_list)
-
-    # Run meta screener
     meta_screener = MetaScreener(FMP_API_KEY, OPENAI_API_KEY)
-    final_stats_df = meta_screener.screen_candidates()
-    if final_stats_df is None or final_stats_df.empty:
-        logi("No records returned from final stats")
-        exit(0)
-
-    symbol_list = final_stats_df['symbol'].unique()
-
-    # Run report generator
-    report_generator = CompanyReportGenerator(FMP_API_KEY, OPENAI_API_KEY)
-    for symbol in symbol_list:
-        # Generate report
-        report_generator.generate_report(symbol)
+    meta_screener.screen_candidates()
+    #finder = OvervaluedBioTechFinder(FMP_API_KEY, OPENAI_API_KEY)
+    #finder.find_candidates()
 
     logd("All done!")
 

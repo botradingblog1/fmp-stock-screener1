@@ -30,10 +30,12 @@ class EstimatedEpsScreener:
             estimates_df = estimates_df[
                 (estimates_df['date'] >= cutoff_date) & estimates_df['date'].notna()
                 ]
-
             if estimates_df.empty:
                 logd(f"No recent estimates available for {symbol}")
                 continue
+
+            # Sort by date
+            estimates_df.sort_values(by=['date'], ascending=[True], inplace=True)
 
             # Calculate average estimated EPS change
             estimates_df['avg_estimated_eps_change'] = estimates_df['estimatedEpsAvg'].pct_change() * 100

@@ -9,12 +9,12 @@ def calculate_price_target_stats(symbol: str, price_target_df: pd.DataFrame):
         'priceWhenPosted']) / price_target_df['priceWhenPosted'] * 100
 
     # Calculate average price target percentage change
-    avg_price_target_change_percent = price_target_df['priceTargetChangePercent'].mean()
+    avg_price_target_change = price_target_df['priceTargetChangePercent'].mean()
 
     # Calculate the coefficient of variation (standard deviation / mean) of price target changes
     price_target_coefficient_variation = (
-        price_target_df['priceTargetChangePercent'].std() / avg_price_target_change_percent
-    ) if avg_price_target_change_percent != 0 else 0
+        price_target_df['priceTargetChangePercent'].std() / avg_price_target_change
+    ) if avg_price_target_change != 0 else 0
 
     # Calculate agreement: ratio of positive to negative price target changes
     positive_changes = price_target_df['priceTargetChangePercent'] > 0
@@ -31,7 +31,7 @@ def calculate_price_target_stats(symbol: str, price_target_df: pd.DataFrame):
     stats_df = pd.DataFrame({
         'symbol': [symbol],
         'avg_price_target': [round(avg_price_target, 2)],
-        'avg_price_target_change_percent': [round(avg_price_target_change_percent, 2)],
+        'avg_price_target_change': [round(avg_price_target_change, 2)],
         'price_target_coefficient_variation': [round(price_target_coefficient_variation, 2)],
         'price_target_agreement_ratio': [round(price_target_agreement_ratio, 2)],
         'num_price_target_analysts': [round(num_price_target_analysts, 2)]

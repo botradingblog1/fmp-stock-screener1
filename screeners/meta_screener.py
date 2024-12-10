@@ -1,25 +1,33 @@
 import pandas as pd
+import numpy as np
 import os
+from universe_selection.universe_selector import UniverseSelector
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 from screeners.analyst_ratings_screener import AnalystRatingsScreener
 from screeners.price_target_screener import PriceTargetScreener
+from screeners.estimated_eps_screener import EstimatedEpsScreener
 from screeners.institutional_ownership_screener import InstitutionalOwnershipScreener
+from report_generators.company_report_generator import CompanyReportGenerator
 from config import *
 from datetime import datetime
 from utils.file_utils import *
 from sklearn.preprocessing import MinMaxScaler
 from ai_clients.openai_client import OpenAiClient
 from utils.log_utils import *
+from utils.fmp_utils import *
 import json
 
 
 class MetaScreener:
     def __init__(self, fmp_api_key: str, openai_api_key: str):
+        self.universe_selector = UniverseSelector(fmp_api_key)
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
         self.analyst_ratings_screener = AnalystRatingsScreener(fmp_api_key)
         self.price_target_screener = PriceTargetScreener(fmp_api_key)
+        self.estimated_eps_screener = EstimatedEpsScreener(fmp_api_key)
         self.inst_own_screener = InstitutionalOwnershipScreener(fmp_api_key)
         self.openai_client = OpenAiClient(openai_api_key)
+        self.report_generator = CompanyReportGenerator(fmp_api_key, openai_api_key)
 
     def load_and_process_results(self, file_name: str, screener_name: str, num_top_results: int) -> pd.DataFrame:
         """
@@ -47,7 +55,7 @@ class MetaScreener:
     def perform_chatgpt_eval(self, stats_df: pd.DataFrame):
         # Pick columns
         df = stats_df.copy()
-        df = df[['symbol', 'total_grades_rating', 'avg_price_target_change_percent', 'institutional_investor_score']]
+        df = df[['symbol', 'total_grades_rating', 'avg_price_target_change', 'institutional_investor_score']]
         df.rename(columns={'total_grades_rating': 'total_analyst_grades_rating'}, inplace=True)
 
         # Convert stats_df to JSON
@@ -159,7 +167,18 @@ class MetaScreener:
                 # Convert the parsed JSON into a DataFrame
                 response_df = pd.DataFrame(response_json)
 
-                # Combine results
+                # Calculate total economic moat score
+                response_df['economic_moat_score'] = round((response_df['first_in_class_product'] + \
+                                                     response_df['global_target_market'] + \
+                                                     response_df['platform_solution'] + \
+                                                     response_df['future_growth_markets'] + \
+                                                     response_df['large_income_changes'] + \
+                                                     response_df['network_effects'] + \
+                                                     response_df['high_switching_costs'] + \
+                                                     response_df['increasing_income_streams'] + \
+                                                     response_df['patented_technologies']) / 9, 2)
+
+                    # Combine results
                 combined_results_df = pd.concat([combined_results_df, response_df], axis=0, ignore_index=True)
 
             except json.JSONDecodeError as e:
@@ -168,69 +187,102 @@ class MetaScreener:
                 loge(f"Error parsing response: {response}, {str(e)}")
         return combined_results_df
 
+    def fetch_quarterly_revenue_growth(self, symbol_list: list, lookback_periods: int = 4):
+        results = []
+        for symbol in symbol_list:
+            # Fetch quarterly income statements
+            income_df = self.fmp_data_loader.fetch_income_statement(symbol, period="quarterly")
+            if income_df is None or income_df.empty:
+                continue
+
+            # Ensure dates are sorted ascending for correct pct_change calculation
+            income_df = income_df.sort_values(by='date', ascending=True)
+
+            # Keep only rows with positive revenue
+            income_df = income_df[income_df['revenue'] > 0].copy()
+
+            # Take the most recent lookback_periods quarters
+            income_df = income_df.tail(lookback_periods)
+            #if income_df is None or income_df.empty or len(income_df) < 2:
+                # Skip if not enough data for calculation
+            #    continue
+
+            # Calculate percentage growth for each quarter
+            income_df['quarterly_revenue_growth'] = income_df['revenue'].pct_change(1)
+
+            # Compute the average growth over the period
+            avg_quarterly_revenue_growth = round(income_df['quarterly_revenue_growth'].mean() * 100, 2)
+
+            # Append result
+            result_row = {'symbol': symbol, 'avg_quarterly_revenue_growth': avg_quarterly_revenue_growth}
+            results.append(result_row)
+
+        # Convert results to a DataFrame
+        results_df = pd.DataFrame(results)
+        return results_df
 
     def screen_candidates(self):
         logd(f"MetaScreener.screen_candidates")
-        num_top_results = 20
 
-        # Define screener configurations
-        screener_configs = [
-            (PRICE_TARGET_RESULTS_FILE_NAME, "price_target_screener"),
-            (ANALYST_RATINGS_RESULTS_FILE_NAME, "analyst_ratings_screener"),
-            (ESTIMATED_EPS_FILE_NAME, "estimated_eps_screener")
-        ]
+        # Universe selection
+        self.universe_selector.perform_selection(industry_list=BIOTECH_INDUSTRY_LIST)
+        symbol_list = self.universe_selector.get_symbol_list()
+        #symbol_list = symbol_list[0:20]
 
-        # Load and process each screener
-        results = []
-        for file_name, screener_name in screener_configs:
-            df = self.load_and_process_results(file_name, screener_name, num_top_results)
-            if df is not None:
-                results.append(df)
+        # Run price target screener
+        price_target_results_df = self.price_target_screener.screen_candidates(symbol_list, min_ratings_count=2)
+        price_target_results_df = price_target_results_df[price_target_results_df['avg_price_target_change'] >= 28.0]
+        symbol_list = price_target_results_df['symbol'].unique()
 
-        # Merge all results
-        if results:
-            merged_df = pd.concat(results, axis=0, ignore_index=True)
-            #print(f"Merged {len(results)} screener results.")
-        else:
-            logd("No screener data found. Returning empty DataFrame.")
-            merged_df = pd.DataFrame(columns=['symbol', 'screener'])
+        # Run analyst ratings screener
+        analyst_ratings_results_df = self.analyst_ratings_screener.screen_candidates(symbol_list, min_ratings_count=0)
 
-        # Grab detailed stats for combined results
-        symbol_list = merged_df['symbol'].unique()
+        # Fetch revenue growth
+        quarterly_revenue_growth_df = self.fetch_quarterly_revenue_growth(symbol_list)
+            
+        # Run estimated revenue growth
+        estimated_revenue_df = fetch_future_revenue_growth(self.fmp_data_loader, symbol_list, period="annual")
 
-        # Run individual screeners
-        analyst_ratings_results_df = self.analyst_ratings_screener.screen_candidates(symbol_list, min_ratings_count=3)
-        price_target_results_df = self.price_target_screener.screen_candidates(symbol_list, min_ratings_count=3)
+        # Get institutional ownership
         inst_own_results_df = self.inst_own_screener.screen_candidates(symbol_list)
 
+        # Get ratios
+        combined_ratios_df = fetch_multiple_ratios(self.fmp_data_loader, symbol_list, period="quarterly")
+
         # Merge all detailed results on symbol
-        stats_df = merged_df[['symbol']].drop_duplicates()
-        if analyst_ratings_results_df is not None:
-            stats_df = stats_df.merge(analyst_ratings_results_df, on='symbol', how='left')
-        if price_target_results_df is not None:
-            stats_df = stats_df.merge(price_target_results_df, on='symbol', how='left')
-        if inst_own_results_df is not None:
-            stats_df = stats_df.merge(inst_own_results_df, on='symbol', how='left')
+        stats_df = price_target_results_df.merge(analyst_ratings_results_df, on='symbol', how='left')
+        stats_df = stats_df.merge(quarterly_revenue_growth_df, on='symbol', how='left')
+        stats_df = stats_df.merge(estimated_revenue_df, on='symbol', how='left')
+        stats_df = stats_df.merge(inst_own_results_df, on='symbol', how='left')
+        stats_df = stats_df.merge(combined_ratios_df, on='symbol', how='left')
 
         # Handle missing values
         stats_df = stats_df.fillna(0)
 
         # Filter minimums
-        stats_df = stats_df[stats_df['avg_price_target_change_percent'] >= 20.0]
+        stats_df = stats_df[stats_df['avg_quarterly_revenue_growth'] >= 2.0]
+        stats_df = stats_df[stats_df['bullish_count'] >= 0]
         stats_df = stats_df[stats_df['investors_put_call_ratio'] < 1.0]
+        stats_df = stats_df[stats_df['price_earnings_ratio'] <= 50.0]
 
         # Perform economic moat factor analysis
-        symbol_list = stats_df['symbol'].unique()
+        """
         economic_moat_factors_df = self.perform_economic_moat_analysis(symbol_list)
         if economic_moat_factors_df is not None and len(economic_moat_factors_df) > 0:
             # merge with stats_df
             stats_df = stats_df.merge(economic_moat_factors_df, on='symbol', how='left')
+        """
+
+        # Invert P/E ratio (avoid division by zero)
+        stats_df['inverted_price_earnings_ratio'] = 1 / stats_df['price_earnings_ratio'].replace(0, np.nan).fillna(1e-6)
 
         # Normalize columns
         columns_to_normalize = [
+            'avg_quarterly_revenue_growth',
             'total_grades_rating',
-            'avg_price_target_change_percent',
-            'institutional_investor_score'
+            'avg_price_target_change',
+            'avg_estimated_revenue_change',
+            'inverted_price_earnings_ratio',  # Include the inverted P/E ratio
         ]
         scaler = MinMaxScaler()
         normalized_data = scaler.fit_transform(stats_df[columns_to_normalize])
@@ -241,9 +293,11 @@ class MetaScreener:
 
         # Calculate weighted score using the normalized columns
         stats_df['weighted_score'] = (
-            stats_df['norm_avg_price_target_change_percent'] * 0.6 +
-            stats_df['norm_total_grades_rating'] * 0.2 +
-            stats_df['institutional_investor_score'] * 0.2
+            stats_df['norm_avg_price_target_change'] * 0.4 +
+            stats_df['norm_avg_quarterly_revenue_growth'] * 0.2 +
+            stats_df['norm_total_grades_rating'] * 0.1 +
+            stats_df['norm_avg_estimated_revenue_change'] * 0.2 +
+            stats_df['norm_inverted_price_earnings_ratio'] * 0.1  # Use normalized inverted P/E
         )
 
         # Sort by weighted score
@@ -257,20 +311,23 @@ class MetaScreener:
         stats_df.reset_index(drop=True, inplace=True)
 
         # Pick columns
-        stats_df = stats_df[['symbol', 'strong_buy_count','buy_count','hold_count','avg_price_target_change_percent',
-                             'num_price_target_analysts','investors_holding','investors_holding_change',
-                             'investors_put_call_ratio', 'investors_put_call_ratio_change','weighted_score',
-                             'first_in_class_product','global_target_market','platform_solution',
-                             'future_growth_markets', 'large_income_changes', 'network_effects',
-                             'high_switching_costs','increasing_income_streams', 'patented_technologies']]
+        stats_df = stats_df[['symbol', 'price_earnings_ratio', 'avg_quarterly_revenue_growth', 'avg_estimated_revenue_change',
+                             'avg_revenue_estimate_analysts', 'bullish_count', 'hold_count', 'avg_price_target_change', 'num_price_target_analysts',
+                             'investors_holding', 'investors_holding_change',
+                             'investors_put_call_ratio', 'weighted_score']]
 
         # Pick top stocks
-        stats_df = stats_df.head(100)
+        stats_df = stats_df.head(50)
 
         # Store results
         file_name = f"meta_screener_results.csv"
         store_csv(RESULTS_DIR, file_name, stats_df)
 
+        symbol_list = stats_df['symbol'].unique()
+
+        # Run report generator
+        for symbol in symbol_list:
+            # Generate report
+            self.report_generator.generate_report(symbol, reports_dir=REPORTS_DIR)
+
         return stats_df
-
-

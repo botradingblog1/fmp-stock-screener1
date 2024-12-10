@@ -26,7 +26,7 @@ class UniverseSelector:
             self.stock_info_df = {}
             self.lock = Lock()
 
-    def perform_selection(self):
+    def perform_selection(self, industry_list=None):
         try:
             logi("Running universe selection....")
 
@@ -50,7 +50,8 @@ class UniverseSelector:
             stock_list_df = stock_list_df[~stock_list_df['symbol'].str.contains(r'\.\w{1,4}$')]
 
             # Filter rows where 'industry' is in the preferred industries list
-            stock_list_df = stock_list_df[stock_list_df['industry'].isin(TECH_INDUSTRY_LIST)]
+            if industry_list is not None:
+                stock_list_df = stock_list_df[stock_list_df['industry'].isin(industry_list)]
 
             # Store list of stocks
             store_csv(CACHE_DIR, 'stock_list_df.csv', stock_list_df)
