@@ -3,6 +3,7 @@ from utils.file_utils import get_os_variable, delete_files_in_directory
 from utils.log_utils import *
 from screeners.overvalued_biotech_finder import OvervaluedBioTechFinder
 from screeners.one_week_momentum_screener import OneWeekMomentumScreener
+from screeners.biggest_winner_screener import BiggestWinnerScreener
 from screeners.meta_screener import MetaScreener
 import schedule
 import time
@@ -46,6 +47,9 @@ if __name__ == "__main__":
 
     meta_screener = MetaScreener(FMP_API_KEY, OPENAI_API_KEY)
     meta_screener.screen_candidates()
+
+    #screener = BiggestWinnerScreener(FMP_API_KEY, OPENAI_API_KEY)
+    #screener.screen_candidates()
     #finder = OvervaluedBioTechFinder(FMP_API_KEY, OPENAI_API_KEY)
     #finder.find_candidates()
 

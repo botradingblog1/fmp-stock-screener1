@@ -1,6 +1,6 @@
 from data_loaders.fmp_stock_list_loader import FmpStockListLoader
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
-from screeners.backup.momentum_screener1 import MomentumScreener1
+from screeners.biggest_winner_screener import MomentumScreener1
 from screeners.backup.growth_screener1 import GrowthScreener1
 from screeners.backup.earnings_estimate_screener1 import EarningsEstimateScreener1
 from screeners.backup.fifty_two_week_low_screener import FiftyTwoWeekLowScreener

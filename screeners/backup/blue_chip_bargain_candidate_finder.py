@@ -1,6 +1,6 @@
 from botrading.data_loaders.fmp_data_loader import FmpDataLoader
 from botrading.data_loaders.market_symbol_loader import MarketSymbolLoader
-from screeners.backup.momentum_screener1 import MomentumScreener1
+from screeners.biggest_winner_screener import MomentumScreener1
 from screeners.backup.growth_screener1 import GrowthScreener1
 from screeners.backup.fifty_two_week_low_screener import FiftyTwoWeekLowScreener
 from data_loaders.fmp_analyst_ratings_loader import FmpAnalystRatingsLoader

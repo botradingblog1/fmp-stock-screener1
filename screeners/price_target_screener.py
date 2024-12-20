@@ -15,14 +15,14 @@ class PriceTargetScreener:
         for symbol in symbol_list:
             # Fetch price targets
             price_targets_df = self.fmp_data_loader.fetch_price_targets(symbol,
-                                                                        cache_data=True,
+                                                                        cache_data=False,
                                                                         cache_dir=CACHE_DIR)
             if price_targets_df is None or price_targets_df.empty:
                 #logd(f"No grades available for {symbol}")
                 continue
 
             # Filter out data more than x months in the past
-            cutoff_date = pd.Timestamp.now() - pd.DateOffset(days=90)
+            cutoff_date = pd.Timestamp.now() - pd.DateOffset(days=120)
             price_targets_df = price_targets_df[(price_targets_df['publishedDate'] >= cutoff_date) & price_targets_df['publishedDate'].notna()]
             if price_targets_df is None or price_targets_df.empty:
                 #logd(f"No grades available for {symbol}")
@@ -35,6 +35,9 @@ class PriceTargetScreener:
             combined_stats_df = pd.concat([combined_stats_df, price_target_stats_df], axis=0, ignore_index=True)
 
         # Filter by minimum analyst ratings
+        if combined_stats_df.empty:
+            logi(f"No stats returned in price target screener")
+            return None
         combined_stats_df = combined_stats_df[combined_stats_df['num_price_target_analysts'] >= min_ratings_count]
 
         # Sort by total buy ratings
