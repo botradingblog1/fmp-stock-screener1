@@ -20,6 +20,7 @@ import json
 
 # Considers 6-month returns, see https://www.bauer.uh.edu/rsusmel/phd/jegadeesh-titman93.pdf
 # ‘Returns to Buying Winners and Selling Losers’ (Jegadeesh/Titman)
+# Changed to only consider tech stocks
 
 
 class BiggestWinnerScreener:
@@ -44,10 +45,10 @@ class BiggestWinnerScreener:
                 logw(f"Not enough price data for {symbol}")
                 continue
             # Current price (latest)
-            current_price = prices_df['close'].iloc[-1]
+            current_price = prices_df['adj_close'].iloc[-1]
 
             # Price start month
-            start_month_price = prices_df['close'].iloc[0]
+            start_month_price = prices_df['adj_close'].iloc[0]
 
             # Calculate momentum factor
             lookback_return = ((current_price - start_month_price) / start_month_price) * 100
@@ -100,14 +101,14 @@ class BiggestWinnerScreener:
         # Universe selection
         self.universe_selector.perform_selection(industry_list=None)
         stock_list_df = self.universe_selector.get_stock_info()
+        symbol_list = stock_list_df['symbol'].unique()
 
         # Exclude biotech industry
         stock_list_df = stock_list_df[~ stock_list_df['industry'].isin(BIOTECH_INDUSTRY_LIST)]
         symbol_list = stock_list_df['symbol'].unique()
-        #symbol_list = symbol_list[0:3]
 
-        # Fetch prices - switch to one month
-        start_date = datetime.today() - timedelta(days=30)
+        # Fetch prices
+        start_date = datetime.today() - timedelta(days=182)
         start_date_str = start_date.strftime("%Y-%m-%d")
         end_date = datetime.today()
         end_date_str = end_date.strftime("%Y-%m-%d")
@@ -118,9 +119,14 @@ class BiggestWinnerScreener:
         momentum_df.sort_values(by=['lookback_return'], ascending=[False], inplace=True)
 
         # Get top results
-        momentum_df = momentum_df.head(10)
+        momentum_df = momentum_df.head(30)
         symbol_list = momentum_df['symbol'].unique()
 
+
+        # Store results
+        file_name = f"biggest_winner_results.csv"
+        store_csv(RESULTS_DIR, file_name, momentum_df)
+        """
         # Run price target screener
         price_target_results_df = self.price_target_screener.screen_candidates(symbol_list, min_ratings_count=0)
 
@@ -149,7 +155,7 @@ class BiggestWinnerScreener:
 
         # Handle missing values
         stats_df = stats_df.fillna(0)
-
+        """
         # Filter minimums
         """
         stats_df = stats_df[stats_df['avg_quarterly_revenue_growth'] >= 2.0]
@@ -195,7 +201,7 @@ class BiggestWinnerScreener:
 
         # Reset index
         stats_df.reset_index(drop=True, inplace=True)
-        """
+
 
         # Pick columns
         stats_df = stats_df[
@@ -207,7 +213,7 @@ class BiggestWinnerScreener:
              'investors_put_call_ratio']]
 
         # Pick top stocks
-        stats_df = stats_df.head(10)
+        stats_df = stats_df.head(30)
 
         # Store results
         file_name = f"biggest_winner_results.csv"
@@ -221,3 +227,4 @@ class BiggestWinnerScreener:
             self.report_generator.generate_report(symbol, reports_dir=REPORTS_DIR)
 
         return stats_df
+        """

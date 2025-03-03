@@ -45,16 +45,17 @@ if __name__ == "__main__":
     # Clean reports
     #delete_files_in_directory(REPORTS_DIR)
 
-    meta_screener = MetaScreener(FMP_API_KEY, OPENAI_API_KEY)
-    meta_screener.screen_candidates()
+    #meta_screener = MetaScreener(FMP_API_KEY, OPENAI_API_KEY)
+    #meta_screener.screen_candidates()
 
-    #screener = BiggestWinnerScreener(FMP_API_KEY, OPENAI_API_KEY)
-    #screener.screen_candidates()
+    screener = BiggestWinnerScreener(FMP_API_KEY, OPENAI_API_KEY)
+    screener.screen_candidates()
+
     #finder = OvervaluedBioTechFinder(FMP_API_KEY, OPENAI_API_KEY)
     #finder.find_candidates()
 
     logd("All done!")
-
+    """
     #  Schedule events - to run the script at regular intervals
     schedule_events()
 
@@ -62,5 +63,5 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(60)  # Check time every x seconds
-
+    """
 

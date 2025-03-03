@@ -225,17 +225,17 @@ class MetaScreener:
         logd(f"MetaScreener.screen_candidates")
 
         # Universe selection
-        self.universe_selector.perform_selection(industry_list=BIOTECH_INDUSTRY_LIST)
+        self.universe_selector.perform_selection(industry_list=TECH_INDUSTRY_LIST)
         symbol_list = self.universe_selector.get_symbol_list()
         #symbol_list = symbol_list[0:20]
 
         # Run price target screener
         price_target_results_df = self.price_target_screener.screen_candidates(symbol_list, min_ratings_count=2)
-        price_target_results_df = price_target_results_df[price_target_results_df['avg_price_target_change'] >= 28.0]
+        price_target_results_df = price_target_results_df[price_target_results_df['avg_price_target_change'] >= 25.0]
         symbol_list = price_target_results_df['symbol'].unique()
 
         # Run analyst ratings screener
-        analyst_ratings_results_df = self.analyst_ratings_screener.screen_candidates(symbol_list, min_ratings_count=0)
+        analyst_ratings_results_df = self.analyst_ratings_screener.screen_candidates(symbol_list, min_ratings_count=3)
 
         # Fetch revenue growth
         quarterly_revenue_growth_df = self.fetch_quarterly_revenue_growth(symbol_list)
@@ -261,6 +261,7 @@ class MetaScreener:
 
         # Filter minimums
         stats_df = stats_df[stats_df['avg_quarterly_revenue_growth'] >= 2.0]
+        stats_df = stats_df[stats_df['avg_estimated_revenue_change'] >= 20.0]
         stats_df = stats_df[stats_df['bullish_count'] >= 0]
         stats_df = stats_df[stats_df['investors_put_call_ratio'] < 1.0]
         stats_df = stats_df[stats_df['price_earnings_ratio'] <= 50.0]
@@ -317,17 +318,19 @@ class MetaScreener:
                              'investors_put_call_ratio', 'weighted_score']]
 
         # Pick top stocks
-        stats_df = stats_df.head(50)
+        stats_df = stats_df.head(100)
 
         # Store results
         file_name = f"meta_screener_results.csv"
-        store_csv(RESULTS_DIR, file_name, stats_df)
+        path = os.path.join(RESULTS_DIR, file_name)
+        stats_df.to_csv(path)
+        logi(f"Meta screener results file saved to {path}")
 
         symbol_list = stats_df['symbol'].unique()
 
         # Run report generator
-        for symbol in symbol_list:
+        #for symbol in symbol_list:
             # Generate report
-            self.report_generator.generate_report(symbol, reports_dir=REPORTS_DIR)
+        #    self.report_generator.generate_report(symbol, reports_dir=REPORTS_DIR)
 
         return stats_df
