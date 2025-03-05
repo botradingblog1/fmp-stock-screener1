@@ -10,6 +10,10 @@ from utils.file_utils import *
 from botrading.base.enums import TimeInterval
 import empyrical as ep
 
+"""
+ Screener for ETF long-term performance
+"""
+
 
 # Configuration
 ETF_PERFORMANCE_CANDIDATES_DIR = "C:\\dev\\trading\\data\\etf_performance\\candidates"
@@ -31,7 +35,7 @@ COUNTRY = "US"
 NUM_YEARS = 10  # Number of years of price data analyzed
 
 
-class EtfPerformanceScreener():
+class EtfPerformanceScreener:
     def __init__(self, fmp_api_key: str):
         self.fmp_api_key = fmp_api_key
         self.fmp_data_loader = FmpDataLoader(fmp_api_key)
