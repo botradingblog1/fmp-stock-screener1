@@ -263,7 +263,7 @@ class MetaScreener:
         stats_df = stats_df[stats_df['avg_quarterly_revenue_growth'] >= 2.0]
         stats_df = stats_df[stats_df['avg_estimated_revenue_change'] >= 20.0]
         stats_df = stats_df[stats_df['bullish_count'] >= 0]
-        stats_df = stats_df[stats_df['investors_put_call_ratio'] < 1.0]
+        #stats_df = stats_df[stats_df['investors_put_call_ratio'] < 1.0]
         stats_df = stats_df[stats_df['price_earnings_ratio'] <= 50.0]
 
         # Perform economic moat factor analysis
